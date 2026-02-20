@@ -1,0 +1,94 @@
+# TeamSurvival - config (SR)
+# Sve vrednosti su u sekundama osim gde piše drugačije.
+
+teams:
+  maxTeamSize: 3
+
+  # Ako je prazno -> svi svetovi dozvoljeni.
+  allowedWorlds: []
+
+  # Pravila za ime tima
+  teamNameMinLength: 2
+  teamNameMaxLength: 16
+  # Slova/brojevi/_/-
+  teamNamePattern: "^[A-Za-z0-9_\\-]+$"
+
+invites:
+  inviteExpireSeconds: 60
+
+home:
+  # Cooldown za /tim sethome (po timu)
+  homeCooldownSeconds: 600
+
+  # Warmup za /tim home
+  homeWarmupSeconds: 5
+
+  # Cooldown za /tim home (po igraču)
+  homeTeleportCooldownSeconds: 120
+
+respawn:
+  respawnToTeamHome: true
+
+tpa:
+  # Cooldown za slanje/teleport nakon uspeha (po requester-u)
+  tpaCooldownSeconds: 180
+
+  # Istek zahteva
+  tpaExpireSeconds: 60
+
+  # Warmup nakon /tim tpaccept
+  tpaWarmupSeconds: 5
+
+warmup:
+  # Ako igrač tokom warmup-a pomeri više od ove distance -> cancel
+  cancelMoveDistanceBlocks: 0.2
+
+combat:
+  # Koliko traje combat-tag od poslednjeg damage-a
+  combatTagSeconds: 15
+
+friendlyFire:
+  # false = OFF (blokira damage između teammate-ova)
+  friendlyFireEnabled: false
+
+  # true = strogo blokira i TNT sa player source protiv teammate-a
+  friendlyFireStrictExplosions: true
+
+ping:
+  showCoordinatesInPing: false
+
+locator:
+  enabled: true
+  # 20 ticks = 1 sekund
+  intervalTicks: 20
+  # koliko teammate-ova maksimalno prikazati u ActionBar-u
+  maxEntries: 4
+
+scoreboard:
+  enabled: true
+  # Fix "zalepjenih boja": briše sve ts_ timove na enable
+  resetOnEnable: true
+  # Sync na PlayerJoin (da odmah dobije boju)
+  syncOnJoin: true
+  teamPrefix: "ts_"
+
+  # Deterministička paleta boja (persistuje se kao colorName u teams.yml)
+  colorPalette:
+    - AQUA
+    - GREEN
+    - YELLOW
+    - LIGHT_PURPLE
+    - GOLD
+    - BLUE
+    - RED
+    - DARK_AQUA
+    - DARK_GREEN
+    - DARK_PURPLE
+    - DARK_BLUE
+    - DARK_RED
+
+persistence:
+  # Debounce: 40 ticks = 2s
+  debounceSaveTicks: 40
+  # Failsafe periodic save: 6000 ticks = 5 min
+  periodicSaveTicks: 6000

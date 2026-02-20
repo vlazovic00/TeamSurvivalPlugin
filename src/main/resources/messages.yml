@@ -1,0 +1,137 @@
+prefix: "&8[&bTeamSurvival&8] &7"
+
+errors:
+  onlyPlayers: "&cOvu komandu mogu koristiti samo igrači."
+  unknownSubcommand: "&cNepoznata podkomanda: &e%sub%&c."
+  playerNotOnline: "&cIgrač &e%player% &cnije online."
+  playerUnknown: "&cIgrač &e%player% &cnije poznat na serveru."
+  generic: "&cDošlo je do greške. Pokušaj ponovo."
+
+usage:
+  create: "&7Upotreba: &b/tim napravi <ime>"
+  invite: "&7Upotreba: &b/tim pozovi <igrač>"
+  tpa: "&7Upotreba: &b/tim tpa <teammate>"
+  kick: "&7Upotreba: &b/tim izbaci <igrač>"
+
+help:
+  header: "&bTeamSurvival &7- pomoć"
+  lines:
+    - "&7Maks veličina tima: &e%max%"
+    - "&7Friendly fire: &e%friendly_fire%"
+    - "&7Locator: &eVidljiv samo članovima tima (ActionBar)"
+    - "&7Smrt: &eRespawn na Team Home ako je postavljen"
+    - ""
+    - "&b/tim napravi <ime> &7- napravi tim"
+    - "&b/tim pozovi <igrač> &7- pošalji poziv"
+    - "&b/tim prihvati &7- prihvati poziv"
+    - "&b/tim odbij &7- odbij poziv"
+    - "&b/tim napusti &7- napusti tim (auto disband ako ostane prazno)"
+    - "&b/tim info &7- info o timu"
+    - "&b/tim sethome &7- postavi Team Home (samo lider)"
+    - "&b/tim home &7- teleport na Team Home"
+    - "&b/tim chat &7- uključi/isključi tim chat"
+    - "&b/tim ping &7- pinguj tim"
+    - "&b/tim tpa <teammate> &7- TPA zahtev unutar tima"
+    - "&b/tim tpaccept &7- prihvati TPA"
+    - "&b/tim tpdeny &7- odbij TPA"
+    - "&b/tim izbaci <igrač> &7- izbaci člana (lider)"
+    - ""
+    - "&7Alias: &b/tik &7(isto kao /tim)"
+
+team:
+  notInTeam: "&cNisi u timu."
+  alreadyInTeam: "&cVeć si u timu."
+  invalidName: "&cNevalidno ime tima. Dužina &e%min%-%max%&c i samo slova/brojevi/_/-."
+  nameTaken: "&cIme tima je već zauzeto."
+  full: "&cTim je pun. Maks: &e%max%&c."
+  notLeader: "&cSamo lider može ovo da uradi."
+  created: "✅ &aTim &b%team% &aje napravljen. &7(ID: &f%id%&7)"
+  left: "➜ &7Napustio si tim &b%team%&7."
+  leftAsLeader: "➜ &7Napustio si tim &b%team%&7. Novi lider: &e%newLeader%&7."
+  newLeader: "➜ &7Novi lider tima je: &e%leader%&7."
+  disbanded: "❌ &7Tim &b%team% &7je rasformiran (nema članova)."
+
+  info:
+    header: "&bTim: &f%team% &7(&f%id%&7)"
+    leader: "&7Lider: &e%leader%"
+    members: "&7Članovi (&e%size%&7/&e%max%&7): &f%members%"
+    homeNotSet: "&7Home: &cNIJE postavljen"
+    homeSet: "&7Home: &a%world% &7(&f%x%&7, &f%y%&7, &f%z%&7)"
+
+invite:
+  sent: "➜ &7Poslat poziv za tim &a(teče: &e%seconds%s&7) igraču: &e%player%&7."
+  received: "➜ &7Dobio si poziv u tim &b%team% &7od &e%leader%&7. &7Istek: &e%seconds%s&7. &b/tim prihvati &7ili &b/tim odbij"
+  targetAlreadyInTeam: "&cIgrač &e%player% &cje već u timu."
+  targetAlreadyInvited: "&cIgrač &e%player% &cveć ima aktivan poziv."
+  none: "&cNemaš aktivan poziv."
+  expired: "&cPoziv je istekao."
+  teamMissing: "&cTim više ne postoji."
+  accepted: "✅ &aUšao si u tim &b%team%&a."
+  acceptedByTarget: "✅ &e%player% &7je prihvatio poziv i ušao u tim &b%team%&7."
+  declined: "➜ &7Odbio si poziv."
+  declinedByTarget: "➜ &e%player% &7je odbio poziv."
+
+home:
+  notSet: "&cTeam Home nije postavljen."
+  set: "✅ &aTeam Home postavljen u &e%world% &7(&f%x%&7,&f%y%&7,&f%z%&7). &7Cooldown: &e%cooldown%s"
+  setCooldown: "&cMožeš ponovo postaviti home za &e%seconds%s&c."
+  worldNotAllowed: "&cSvet &e%world% &cnije dozvoljen za Team Home."
+  invalidWorld: "&cSvet &e%world% &cne postoji."
+  teleported: "✅ &aTeleportovao si se na Team Home. &7Cooldown: &e%cooldown%s"
+
+combat:
+  blockTeleport: "&cNe možeš teleport u combatu. &7Preostalo: &e%seconds%s"
+  blockTeleportOther: "&cIgrač &e%player% &cje u combatu. &7Preostalo: &e%seconds%s"
+
+warmup:
+  already: "&cVeć imaš aktivan warmup."
+  otherAlready: "&cIgrač &e%player% &cveć ima aktivan warmup."
+  startHome: "➜ &7Teleport kreće za &e%seconds%s&7. &cNe pomeraj se i ne primaj damage."
+  startTpaTarget: "➜ &7Prihvatio si TPA za &e%player%&7. Teleport kreće za &e%seconds%s&7."
+  startTpaRequester: "➜ &7Teleport kreće za &e%seconds%s&7. &cNe pomeraj se i ne primaj damage."
+  cancelMove: "❌ &cTeleport otkazan: pomerio si se."
+  cancelDamage: "❌ &cTeleport otkazan: primio si damage."
+  cancelCombat: "❌ &cTeleport otkazan: ušao si u combat."
+
+cooldown:
+  home: "&cTeleport na home je na cooldownu. &7Preostalo: &e%seconds%s"
+  tpa: "&cTPA je na cooldownu. &7Preostalo: &e%seconds%s"
+
+tpa:
+  notSameTeam: "&cTPA radi samo unutar tima."
+  sent: "➜ &7Poslat TPA zahtev igraču &e%player%&7. &7Istek: &e%seconds%s"
+  received: "➜ &7Dobio si TPA zahtev od &e%player%&7. &b/tim tpaccept &7ili &b/tim tpdeny &7(&e%seconds%s&7)"
+  targetAlreadyHasRequest: "&cIgrač &e%player% &cveć ima aktivan TPA zahtev."
+  none: "&cNemaš aktivan TPA zahtev."
+  expired: "&cTPA zahtev je istekao."
+  requesterOffline: "&cRequester nije online."
+  denied: "➜ &7Odbio si TPA."
+  deniedByTarget: "➜ &e%player% &7je odbio tvoj TPA."
+  teleported: "✅ &aTeleportovao si se do &e%player%&a. &7Cooldown: &e%cooldown%s"
+  teleportedOther: "✅ &e%player% &7je teleportovan do tebe."
+
+chat:
+  enabled: "✅ &aTeam chat uključen."
+  disabled: "➜ &7Team chat isključen."
+  format: "&8[&bTIM&8] &b%player%&7: &f%message%"
+
+ping:
+  noCoords: "📍 &7PING od &e%player%&7!"
+  withCoords: "📍 &7PING od &e%player%&7! &7(&f%world%&7: &f%x%&7,&f%y%&7,&f%z%&7)"
+
+friendlyFire:
+  blocked: "&cFF je isključen (ne možeš damage teammate-u)."
+
+kick:
+  cantKickSelf: "&cNe možeš izbaciti sebe. Koristi &b/tim napusti&c."
+  cantKickLeader: "&cNe možeš izbaciti lidera."
+  notInYourTeam: "&cIgrač &e%player% &cnije u tvom timu."
+  kicked: "✅ &aIzbacio si igrača: &e%player%&a."
+  youWereKicked: "❌ &cIzbačen si iz tima &b%team%&c."
+
+actionbar:
+  locator:
+    format: "&8[&bTIM&8] &r{entries}"
+    entrySameWorld: "&f{arrow} &b{name} &8· &f{distance}&7m"
+    entryOtherWorld: "&c⛔ &b{name} &8· &d{world}"
+    separator: " &8•&r "
