@@ -6,6 +6,10 @@ errors:
   playerNotOnline: "&cIgrač &e%player% &cnije online."
   playerUnknown: "&cIgrač &e%player% &cnije poznat na serveru."
   generic: "&cDošlo je do greške. Pokušaj ponovo."
+  noPermission: "&cNemaš dozvolu za ovu komandu."
+
+reload:
+  success: "&aReload uspešan: config.yml i messages.yml su učitani ponovo."
 
 usage:
   create: "&7Upotreba: &b/tim napravi <ime>"
@@ -131,7 +135,6 @@ kick:
 
 actionbar:
   locator:
-    format: "&8[&bTIM&8] &r{entries}"
-    entrySameWorld: "&f{arrow} &b{name} &8· &f{distance}&7m"
-    entryOtherWorld: "&c⛔ &b{name} &8· &d{world}"
-    separator: " &8•&r "
+    format: "&8[&bTIM&8] &r%entries%"
+    entrySameWorld: "&f%arrow% &b%name% &8· &f%distance%&7m"
+    entryOtherWorld: "&c⛔ &b%name% &8· &d%world%"

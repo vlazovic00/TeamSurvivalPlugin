@@ -9,35 +9,36 @@ import java.util.regex.Pattern;
 
 public final class Settings {
 
-    public final int maxTeamSize;
-    public final List<String> allowedWorldsLower;
+    // NOTE: više nisu final da bi mogli reload bez restartovanja servisa
+    public int maxTeamSize;
+    public List<String> allowedWorldsLower;
 
-    public final int inviteExpireSeconds;
+    public int inviteExpireSeconds;
 
-    public final int homeCooldownSeconds;
-    public final int homeWarmupSeconds;
-    public final int homeTeleportCooldownSeconds;
+    public int homeCooldownSeconds;
+    public int homeWarmupSeconds;
+    public int homeTeleportCooldownSeconds;
 
-    public final boolean respawnToTeamHome;
+    public boolean respawnToTeamHome;
 
-    public final int tpaCooldownSeconds;
-    public final int tpaExpireSeconds;
-    public final int tpaWarmupSeconds;
+    public int tpaCooldownSeconds;
+    public int tpaExpireSeconds;
+    public int tpaWarmupSeconds;
 
-    public final int combatTagSeconds;
+    public int combatTagSeconds;
 
-    public final double warmupCancelMoveDistance;
-    public final double warmupCancelMoveDistanceSquared;
+    public double warmupCancelMoveDistance;
+    public double warmupCancelMoveDistanceSquared;
 
-    public final boolean friendlyFireEnabled;
-    public final boolean friendlyFireStrictExplosions;
+    public boolean friendlyFireEnabled;
+    public boolean friendlyFireStrictExplosions;
 
-    public final boolean showCoordinatesInPing;
+    public boolean showCoordinatesInPing;
 
-    public final Locator locator;
-    public final Scoreboard scoreboard;
-    public final Persistence persistence;
-    public final TeamName teamName;
+    public Locator locator;
+    public Scoreboard scoreboard;
+    public Persistence persistence;
+    public TeamName teamName;
 
     private Settings(
             int maxTeamSize,
@@ -162,6 +163,41 @@ public final class Settings {
                 persistence,
                 teamName
         );
+    }
+
+    /** Update-uje postojeći Settings objekt da svi servisi vide nove vrednosti bez rekreiranja. */
+    public void copyFrom(Settings s) {
+        if (s == null) return;
+
+        this.maxTeamSize = s.maxTeamSize;
+        this.allowedWorldsLower = s.allowedWorldsLower;
+
+        this.inviteExpireSeconds = s.inviteExpireSeconds;
+
+        this.homeCooldownSeconds = s.homeCooldownSeconds;
+        this.homeWarmupSeconds = s.homeWarmupSeconds;
+        this.homeTeleportCooldownSeconds = s.homeTeleportCooldownSeconds;
+
+        this.respawnToTeamHome = s.respawnToTeamHome;
+
+        this.tpaCooldownSeconds = s.tpaCooldownSeconds;
+        this.tpaExpireSeconds = s.tpaExpireSeconds;
+        this.tpaWarmupSeconds = s.tpaWarmupSeconds;
+
+        this.combatTagSeconds = s.combatTagSeconds;
+
+        this.warmupCancelMoveDistance = s.warmupCancelMoveDistance;
+        this.warmupCancelMoveDistanceSquared = s.warmupCancelMoveDistanceSquared;
+
+        this.friendlyFireEnabled = s.friendlyFireEnabled;
+        this.friendlyFireStrictExplosions = s.friendlyFireStrictExplosions;
+
+        this.showCoordinatesInPing = s.showCoordinatesInPing;
+
+        this.locator = s.locator;
+        this.scoreboard = s.scoreboard;
+        this.persistence = s.persistence;
+        this.teamName = s.teamName;
     }
 
     public boolean isWorldAllowed(String worldName) {

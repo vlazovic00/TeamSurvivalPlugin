@@ -2,8 +2,8 @@ package me.chinq.teamsurvival.service;
 
 import me.chinq.teamsurvival.storage.TeamsYamlStorage;
 import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 public final class PersistenceService {
 
@@ -13,6 +13,7 @@ public final class PersistenceService {
     private final TeamService teamService;
 
     private BukkitTask pending;
+    private BukkitTask periodic;
 
     public PersistenceService(JavaPlugin plugin, Settings settings, TeamsYamlStorage storage, TeamService teamService) {
         this.plugin = plugin;
@@ -20,16 +21,35 @@ public final class PersistenceService {
         this.storage = storage;
         this.teamService = teamService;
 
-        // periodic failsafe save
-        Bukkit.getScheduler().runTaskTimer(plugin, this::saveNow,
-                settings.persistence.periodicSaveTicks(),
-                settings.persistence.periodicSaveTicks()
-        );
+        startPeriodic();
+    }
+
+    private void startPeriodic() {
+        stopPeriodic();
+        int period = Math.max(1, settings.persistence.periodicSaveTicks());
+        periodic = Bukkit.getScheduler().runTaskTimer(plugin, this::saveNow, period, period);
+    }
+
+    private void stopPeriodic() {
+        if (periodic != null) {
+            periodic.cancel();
+            periodic = null;
+        }
+    }
+
+    /** Pozovi posle reload settings/config da promeni debounce/periodic tickove. */
+    public void restartTimers() {
+        if (pending != null) {
+            pending.cancel();
+            pending = null;
+        }
+        startPeriodic();
     }
 
     public void requestSaveDebounced() {
         if (pending != null) pending.cancel();
-        pending = Bukkit.getScheduler().runTaskLater(plugin, this::saveNow, settings.persistence.debounceSaveTicks());
+        int delay = Math.max(1, settings.persistence.debounceSaveTicks());
+        pending = Bukkit.getScheduler().runTaskLater(plugin, this::saveNow, delay);
     }
 
     public void saveNow() {

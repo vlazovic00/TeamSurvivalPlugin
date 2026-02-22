@@ -1,21 +1,36 @@
+# =========================================================
 # TeamSurvival - config (SR)
-# Sve vrednosti su u sekundama osim gde piše drugačije.
+# Sve vrednosti su u sekundama, osim gde piše drugačije.
+# =========================================================
 
+# -------------------------
+# TEAM SETUP
+# -------------------------
 teams:
+  # Maksimalno igrača u timu
   maxTeamSize: 3
 
-  # Ako je prazno -> svi svetovi dozvoljeni.
+  # Ako je prazno -> svi svetovi dozvoljeni
   allowedWorlds: []
 
   # Pravila za ime tima
   teamNameMinLength: 2
   teamNameMaxLength: 16
-  # Slova/brojevi/_/-
+  # Dozvoljeno: slova/brojevi/_/-
   teamNamePattern: "^[A-Za-z0-9_\\-]+$"
 
+
+# -------------------------
+# INVITES
+# -------------------------
 invites:
+  # Koliko dugo poziv važi
   inviteExpireSeconds: 60
 
+
+# -------------------------
+# TEAM HOME / TELEPORT
+# -------------------------
 home:
   # Cooldown za /tim sethome (po timu)
   homeCooldownSeconds: 600
@@ -26,9 +41,18 @@ home:
   # Cooldown za /tim home (po igraču)
   homeTeleportCooldownSeconds: 120
 
+
+# -------------------------
+# RESPAWN
+# -------------------------
 respawn:
+  # true = respawn ide na team home (ako postoji)
   respawnToTeamHome: true
 
+
+# -------------------------
+# TPA (TEAM TELEPORT REQUEST)
+# -------------------------
 tpa:
   # Cooldown za slanje/teleport nakon uspeha (po requester-u)
   tpaCooldownSeconds: 180
@@ -39,14 +63,26 @@ tpa:
   # Warmup nakon /tim tpaccept
   tpaWarmupSeconds: 5
 
+
+# -------------------------
+# GLOBAL WARMUP RULES
+# -------------------------
 warmup:
   # Ako igrač tokom warmup-a pomeri više od ove distance -> cancel
   cancelMoveDistanceBlocks: 0.2
 
+
+# -------------------------
+# COMBAT TAG
+# -------------------------
 combat:
   # Koliko traje combat-tag od poslednjeg damage-a
   combatTagSeconds: 15
 
+
+# -------------------------
+# FRIENDLY FIRE
+# -------------------------
 friendlyFire:
   # false = OFF (blokira damage između teammate-ova)
   friendlyFireEnabled: false
@@ -54,22 +90,39 @@ friendlyFire:
   # true = strogo blokira i TNT sa player source protiv teammate-a
   friendlyFireStrictExplosions: true
 
+
+# -------------------------
+# /PING SETTINGS
+# -------------------------
 ping:
+  # true = pokazuje koordinate u /ping (ako plugin to koristi)
   showCoordinatesInPing: false
 
+
+# -------------------------
+# LOCATOR (ACTIONBAR TEAMMATES)
+# -------------------------
 locator:
   enabled: true
   # 20 ticks = 1 sekund
   intervalTicks: 20
-  # koliko teammate-ova maksimalno prikazati u ActionBar-u
+  # Koliko teammate-ova maksimalno prikazati u ActionBar-u
   maxEntries: 4
 
+
+# -------------------------
+# SCOREBOARD TEAMS / COLORS
+# -------------------------
 scoreboard:
   enabled: true
+
   # Fix "zalepjenih boja": briše sve ts_ timove na enable
   resetOnEnable: true
+
   # Sync na PlayerJoin (da odmah dobije boju)
   syncOnJoin: true
+
+  # Prefix za scoreboard teamove
   teamPrefix: "ts_"
 
   # Deterministička paleta boja (persistuje se kao colorName u teams.yml)
@@ -87,8 +140,341 @@ scoreboard:
     - DARK_BLUE
     - DARK_RED
 
+
+# -------------------------
+# DATA SAVE / PERSISTENCE
+# -------------------------
 persistence:
   # Debounce: 40 ticks = 2s
   debounceSaveTicks: 40
+
   # Failsafe periodic save: 6000 ticks = 5 min
   periodicSaveTicks: 6000
+
+
+# =========================================================
+# REWARDS SYSTEM (periodične nagrade)
+# =========================================================
+rewards:
+  enabled: true
+
+  # Na koliko sekundi se dodeljuju nagrade
+  intervalSeconds: 1800
+
+  # true = SVAKI online igrač dobije nagradu na interval
+  # false = samo 1 random igrač dobije nagradu na interval
+  giveToAllOnline: false
+
+  # Ako je reward KIT (više itema), a ti ne staviš "display",
+  # ovo će se koristiti kao fallback.
+  kitDisplayFallback: "&bSpecijalni kit"
+
+  fireworks:
+    enabled: true
+    radius: 6
+
+    # Koliko vatrometa ide po rarity (možeš da pumpaš brutalno)
+    byRarity:
+      common: 4
+      uncommon: 8
+      rare: 14
+      epic: 22
+      legendary: 35
+      mythic: 55
+
+  # Nagrade (WEIGHT = šansa; veći weight = češće)
+  items:
+    # -------------------------
+    # COMMON
+    # -------------------------
+    - id: iron
+      type: ITEM
+      material: IRON_INGOT
+      minAmount: 1
+      maxAmount: 6
+      weight: 60
+      rarity: COMMON
+
+    - id: coal
+      type: ITEM
+      material: COAL
+      minAmount: 4
+      maxAmount: 16
+      weight: 55
+      rarity: COMMON
+
+    - id: arrows
+      type: ITEM
+      material: ARROW
+      minAmount: 8
+      maxAmount: 32
+      weight: 45
+      rarity: COMMON
+
+    - id: steak
+      type: ITEM
+      material: COOKED_BEEF
+      minAmount: 6
+      maxAmount: 24
+      weight: 45
+      rarity: COMMON
+
+    # -------------------------
+    # UNCOMMON
+    # -------------------------
+    - id: gold
+      type: ITEM
+      material: GOLD_INGOT
+      minAmount: 1
+      maxAmount: 6
+      weight: 28
+      rarity: UNCOMMON
+
+    - id: lapis
+      type: ITEM
+      material: LAPIS_LAZULI
+      minAmount: 8
+      maxAmount: 32
+      weight: 26
+      rarity: UNCOMMON
+
+    - id: enderpearls
+      type: ITEM
+      material: ENDER_PEARL
+      minAmount: 1
+      maxAmount: 6
+      weight: 18
+      rarity: UNCOMMON
+
+    - id: xp_bottles
+      type: ITEM
+      material: EXPERIENCE_BOTTLE
+      minAmount: 8
+      maxAmount: 32
+      weight: 16
+      rarity: UNCOMMON
+
+    # -------------------------
+    # RARE
+    # -------------------------
+    - id: diamonds
+      type: ITEM
+      material: DIAMOND
+      minAmount: 1
+      maxAmount: 3
+      weight: 10
+      rarity: RARE
+
+    - id: emeralds
+      type: ITEM
+      material: EMERALD
+      minAmount: 2
+      maxAmount: 6
+      weight: 9
+      rarity: RARE
+
+    - id: totem
+      type: ITEM
+      material: TOTEM_OF_UNDYING
+      minAmount: 1
+      maxAmount: 1
+      weight: 3
+      rarity: RARE
+      display: "&eTotem of Undying"
+
+    - id: shulker
+      type: ITEM
+      material: SHULKER_BOX
+      minAmount: 1
+      maxAmount: 1
+      weight: 3
+      rarity: RARE
+      display: "&dShulker Box"
+
+    # -------------------------
+    # EPIC
+    # -------------------------
+    - id: enchanted_gapples
+      type: ITEM
+      material: ENCHANTED_GOLDEN_APPLE
+      minAmount: 1
+      maxAmount: 2
+      weight: 2
+      rarity: EPIC
+      display: "&6Enchanted Golden Apple"
+
+    - id: netherite_ingot
+      type: ITEM
+      material: NETHERITE_INGOT
+      minAmount: 1
+      maxAmount: 1
+      weight: 2
+      rarity: EPIC
+      display: "&8Netherite Ingot"
+
+    - id: trident
+      type: ITEM
+      material: TRIDENT
+      minAmount: 1
+      maxAmount: 1
+      weight: 1
+      rarity: EPIC
+      display: "&bTrident"
+
+    # -------------------------
+    # LEGENDARY (KIT)
+    # -------------------------
+    - id: diamond_armor_full
+      type: KIT
+      weight: 1
+      rarity: LEGENDARY
+      display: "&b&lDiamond Armor FULL SET"
+      items:
+        - material: DIAMOND_HELMET
+          amount: 1
+        - material: DIAMOND_CHESTPLATE
+          amount: 1
+        - material: DIAMOND_LEGGINGS
+          amount: 1
+        - material: DIAMOND_BOOTS
+          amount: 1
+
+    - id: elytra
+      type: ITEM
+      material: ELYTRA
+      minAmount: 1
+      maxAmount: 1
+      weight: 1
+      rarity: LEGENDARY
+      display: "&d&lKRILA (ELYTRA)"
+
+    - id: beacon
+      type: ITEM
+      material: BEACON
+      minAmount: 1
+      maxAmount: 1
+      weight: 1
+      rarity: LEGENDARY
+      display: "&f&lBeacon"
+
+    # -------------------------
+    # MYTHIC (KIT)
+    # -------------------------
+    - id: netherite_armor_full
+      type: KIT
+      weight: 1
+      rarity: MYTHIC
+      display: "&5&lNETHERITE FULL SET (GODLIKE)"
+      message: "&7[&5💎&7] &5&lULTRA RARE! &f%player% &7je dobio &5&l%reward%&7!!!"
+      items:
+        - material: NETHERITE_HELMET
+          amount: 1
+        - material: NETHERITE_CHESTPLATE
+          amount: 1
+        - material: NETHERITE_LEGGINGS
+          amount: 1
+        - material: NETHERITE_BOOTS
+          amount: 1
+
+    - id: nether_star
+      type: ITEM
+      material: NETHER_STAR
+      minAmount: 1
+      maxAmount: 1
+      weight: 1
+      rarity: MYTHIC
+      display: "&f&lNether Star"
+      message: "&7[&5💎&7] &5&lOMG! &f%player% &7je izvukao &f%reward% &7(NEVEROVATNO)!"
+
+
+# =========================================================
+# SUPPLY DROPS (random chest u border-u)
+# =========================================================
+supplyDrops:
+  enabled: true
+
+  # Ako ostaviš prazno -> uzme prvi world sa servera
+  world: ""
+
+  # Na koji interval se spawnuje supply chest
+  intervalSeconds: 3600
+
+  # Ako niko ne otvori chest, briše se posle X sekundi
+  expireSeconds: 600
+
+  # U kojim trenucima (sekunde pre brisanja) da šalje upozorenje
+  expireWarningsSeconds: [60, 30, 10]
+
+  messages:
+    expireWarning: "&6&l[SUPPLY] &eSupply chest će biti obrisan za &c%time%&e ako ga niko ne otvori!"
+    expired: "&6&l[SUPPLY] &cSupply chest je istekao i obrisan je."
+
+  # Koliko blokova unutra od border-a (da ne padne baš na ivicu)
+  borderMarginBlocks: 8
+
+  # Koliko sekundi nakon otvaranja chest nestaje
+  removeAfterOpenSeconds: 10
+
+  # Hard cap koliko daleko od centra/igraca sme da baci drop
+  # (da ne ode na milione blokova)
+  maxRadiusBlocks: 2000
+
+  # true = spawn oko igraca (najbezbednije)
+  # false = spawn oko world spawna
+  preferNearPlayers: false
+
+  titles:
+    spawn:
+      title: "&6&lSUPPLY DROP!"
+      subtitle: "&ePao je supply u worldborder-u!"
+      fadeInTicks: 10
+      stayTicks: 60
+      fadeOutTicks: 10
+
+  fireworks:
+    # Koliko dugo traje spam vatrometa
+    durationSeconds: 6
+    # Na koliko tickova puca novi burst (manje = jače)
+    everyTicks: 2
+    # Koliko vatrometa po burst-u
+    perBurst: 2
+
+  loot:
+    # Koliko itema ukupno ubaci u chest (random između min i max)
+    minItems: 1
+    maxItems: 2
+
+    # Lista itema koji mogu da se pojave u chestu
+    items:
+      - material: NETHERITE_SWORD
+        amount: 1
+        name: "&c&lOP Sword"
+        lore:
+          - "&7Sharpness V"
+          - "&7Unbreaking III"
+        enchants:
+          DAMAGE_ALL: 5
+          DURABILITY: 3
+        unbreakable: true
+        hideFlags: true
+
+      - material: ENCHANTED_GOLDEN_APPLE
+        minAmount: 2
+        maxAmount: 6
+
+      - material: NETHERITE_CHESTPLATE
+        amount: 1
+        name: "&5&lOP Chestplate"
+        enchants:
+          PROTECTION_ENVIRONMENTAL: 5
+          DURABILITY: 3
+        unbreakable: true
+        hideFlags: true
+
+      - material: TOTEM_OF_UNDYING
+        minAmount: 1
+        maxAmount: 2
+
+      - material: NETHERITE_INGOT
+        minAmount: 2
+        maxAmount: 6
