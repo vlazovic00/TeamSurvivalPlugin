@@ -31,6 +31,7 @@ public final class GameplayListener implements Listener {
     private final TeleportService teleports;
     private final CombatTagService combat;
 
+
     public GameplayListener(Settings settings, MessageService msg, TeamService teamService, TeleportService teleports, CombatTagService combat) {
         this.settings = settings;
         this.msg = msg;
@@ -101,6 +102,13 @@ public final class GameplayListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent e) {
         teleports.cancelWarmup(e.getPlayer().getUniqueId(), TeleportService.CancelReason.QUIT);
+
+        try {
+            var p = e.getPlayer();
+            if (combat.isTagged(p.getUniqueId())) {
+                p.setHealth(0.0);
+            }
+        } catch (Throwable ignored) {}
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

@@ -1,5 +1,6 @@
 package me.chinq.teamsurvival.listener;
 
+import me.chinq.teamsurvival.service.BountyService;
 import me.chinq.teamsurvival.service.ScoreboardService;
 import me.chinq.teamsurvival.service.Settings;
 import org.bukkit.Bukkit;
@@ -13,15 +14,20 @@ public final class JoinListener implements Listener {
     private final JavaPlugin plugin;
     private final Settings settings;
     private final ScoreboardService scoreboard;
+    private final BountyService bountyService;
 
-    public JoinListener(JavaPlugin plugin, Settings settings, ScoreboardService scoreboard) {
+    public JoinListener(JavaPlugin plugin, Settings settings, ScoreboardService scoreboard, BountyService bountyService) {
         this.plugin = plugin;
         this.settings = settings;
         this.scoreboard = scoreboard;
+        this.bountyService = bountyService;
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
+        // bounty nick update
+        Bukkit.getScheduler().runTaskLater(plugin, () -> bountyService.applyBountyName(e.getPlayer()), 1L);
+
         if (!settings.scoreboard.enabled()) return;
         if (!settings.scoreboard.syncOnJoin()) return;
 

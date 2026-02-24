@@ -19,7 +19,12 @@ teams:
   # Dozvoljeno: slova/brojevi/_/-
   teamNamePattern: "^[A-Za-z0-9_\\-]+$"
 
+economy:
+  starting-coins: 500
 
+  starter-abuse:
+    once-ever: true
+    cooldown-hours: 72
 # -------------------------
 # INVITES
 # -------------------------

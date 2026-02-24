@@ -44,7 +44,7 @@ public final class ChatListener implements Listener {
 
         String message = e.getMessage();
         Map<String, String> ph = new HashMap<>();
-        ph.put("player", p.getName());
+        ph.put("player", p.getDisplayName());
         ph.put("message", message);
 
         Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("TeamSurvival"), () -> {

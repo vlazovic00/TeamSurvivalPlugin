@@ -19,13 +19,13 @@ public final class TimReloadCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (!sender.isOp()) {
-            messages.sendPrefixed(sender, "errors.noPermission");
+        if (!sender.hasPermission("teamsurvival.reload")) {
+            sender.sendMessage("§cNemaš dozvolu za ovu komandu.");
             return true;
         }
 
         plugin.reloadAllConfigs();
-        messages.sendPrefixed(sender, "reload.success");
+        sender.sendMessage("§aTeamSurvival config reloadovan.");
         return true;
     }
 }

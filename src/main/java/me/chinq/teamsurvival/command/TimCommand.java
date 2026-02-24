@@ -28,6 +28,9 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
     private final InviteService invites;
     private final TpaService tpa;
 
+    private final BountyService bountyService;
+    private final ShopService shopService;
+
     public TimCommand(
             Settings settings,
             MessageService msg,
@@ -37,7 +40,9 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
             CombatTagService combat,
             TeleportService teleports,
             InviteService invites,
-            TpaService tpa
+            TpaService tpa,
+            BountyService bountyService,
+            ShopService shopService
     ) {
         this.settings = settings;
         this.msg = msg;
@@ -48,6 +53,9 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
         this.teleports = teleports;
         this.invites = invites;
         this.tpa = tpa;
+
+        this.bountyService = bountyService;
+        this.shopService = shopService;
     }
 
     @Override
@@ -100,6 +108,7 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                 handleChatToggle(p);
                 return true;
             }
+
             case "ping" -> {
                 handlePing(p);
                 return true;
@@ -120,6 +129,42 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                 handleKick(p, args);
                 return true;
             }
+
+            // ===== economy =====
+            case "coins", "bal", "novac" -> {
+                Team t = teamService.getTeamOf(p.getUniqueId());
+                if (t == null) {
+                    msg.sendPrefixed(p, "errors.noTeam");
+                    return true;
+                }
+                p.sendMessage(org.bukkit.ChatColor.GREEN + "Team coins: " + org.bukkit.ChatColor.GOLD + t.getCoins());
+                return true;
+            }
+
+            // /tim coinset <team> <amount> (admin)
+            case "coinset" -> {
+                handleCoinSet(p, args);
+                return true;
+            }
+
+            // /tim bounty <igrac> <amount>
+            case "bounty" -> {
+                handleBounty(p, args);
+                return true;
+            }
+
+            // /tim shop
+            case "shop" -> {
+                // ShopService itself blocks non-team players, but we can short-circuit too
+                Team t = teamService.getTeamOf(p.getUniqueId());
+                if (t == null) {
+                    msg.sendPrefixed(p, "errors.noTeam");
+                    return true;
+                }
+                shopService.openShop(p);
+                return true;
+            }
+
             default -> {
                 msg.sendPrefixed(p, "errors.unknownSubcommand", Map.of("sub", sub));
                 sendHelp(p);
@@ -141,6 +186,12 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                     "friendly_fire", ff
             ))));
         }
+
+        msg.sendRaw(p, msg.colorize("&8&l----------------"));
+        msg.sendRaw(p, msg.colorize("&7/tim coins &8- &fprikaz coins tima"));
+        msg.sendRaw(p, msg.colorize("&7/tim bounty <igrac> <amount> &8- &fpostavi bounty (skida coins timu)"));
+        msg.sendRaw(p, msg.colorize("&7/tim shop &8- &fshop (kupi iteme / prodaj glave)"));
+        msg.sendRaw(p, msg.colorize("&7/tim coinset <team> <amount> &8- &f(admin) set coins timu"));
     }
 
     private void handleCreate(Player p, String[] args) {
@@ -168,6 +219,8 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
 
         Team created = teamService.createTeam(p.getUniqueId(), name);
         msg.sendPrefixed(p, "team.created", Map.of("team", created.getName(), "id", created.getId()));
+
+        // NOTE: starting coins are handled inside TeamService via StarterCoinsService anti-abuse.
         persistence.requestSaveDebounced();
     }
 
@@ -203,7 +256,6 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
             msg.sendPrefixed(p, "team.left", Map.of("team", out.teamName));
         }
 
-        // if player had team-chat enabled, turn it off on leave (server runtime only)
         teamChat.setEnabled(p.getUniqueId(), false);
         persistence.requestSaveDebounced();
     }
@@ -244,6 +296,7 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                 "members", members
         ))));
         msg.sendRaw(p, msg.colorize(homeText));
+        msg.sendRaw(p, msg.colorize("&7Coins: &6" + team.getCoins()));
     }
 
     private void handleSetHome(Player p) {
@@ -421,7 +474,7 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
         }
 
         String name = args[1];
-        UUID targetUuid = null;
+        UUID targetUuid;
 
         Player online = Bukkit.getPlayerExact(name);
         if (online != null) {
@@ -460,6 +513,78 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
         }
 
         persistence.requestSaveDebounced();
+    }
+
+    private void handleBounty(Player p, String[] args) {
+        if (args.length < 3) {
+            p.sendMessage(org.bukkit.ChatColor.RED + "Koristi: /tim bounty <igrac> <amount>");
+            return;
+        }
+
+        String targetName = args[1];
+
+        long amount;
+        try {
+            amount = Long.parseLong(args[2]);
+        } catch (Exception ex) {
+            p.sendMessage(org.bukkit.ChatColor.RED + "Amount mora biti broj.");
+            return;
+        }
+
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        if (target.getName() == null && !target.hasPlayedBefore()) {
+            msg.sendPrefixed(p, "errors.playerUnknown", Map.of("player", targetName));
+            return;
+        }
+
+        BountyService.PlaceOutcome out = bountyService.placeBounty(p, target, amount);
+
+        switch (out) {
+            case OK -> p.sendMessage(org.bukkit.ChatColor.GREEN + "Postavio si bounty " + org.bukkit.ChatColor.GOLD + amount
+                    + org.bukkit.ChatColor.GREEN + " na " + org.bukkit.ChatColor.AQUA + target.getName());
+            case NO_TEAM -> msg.sendPrefixed(p, "errors.noTeam");
+            case SAME_TEAM -> p.sendMessage(org.bukkit.ChatColor.RED + "Ne možeš staviti bounty na igrača iz svog tima.");
+            case SELF -> p.sendMessage(org.bukkit.ChatColor.RED + "Ne možeš staviti bounty na sebe.");
+            case TOO_SMALL -> p.sendMessage(org.bukkit.ChatColor.RED + "Bounty je premali.");
+            case TOO_LARGE -> p.sendMessage(org.bukkit.ChatColor.RED + "Bounty je prevelik.");
+            case NOT_ENOUGH_COINS -> p.sendMessage(org.bukkit.ChatColor.RED + "Tvoj tim nema dovoljno coins.");
+            default -> p.sendMessage(org.bukkit.ChatColor.RED + "Greška.");
+        }
+
+        persistence.requestSaveDebounced();
+    }
+
+    // /tim coinset <team> <amount>
+    private void handleCoinSet(Player p, String[] args) {
+        if (!p.hasPermission("teamsurvival.coinset")) {
+            p.sendMessage("§cNemaš dozvolu.");
+            return;
+        }
+        if (args.length < 3) {
+            p.sendMessage("§cKoristi: /tim coinset <team> <amount>");
+            return;
+        }
+
+        String teamName = args[1];
+        Team team = teamService.getTeamByName(teamName);
+        if (team == null) {
+            p.sendMessage("§cTim ne postoji.");
+            return;
+        }
+
+        long amount;
+        try {
+            amount = Long.parseLong(args[2]);
+        } catch (Exception e) {
+            p.sendMessage("§cAmount mora biti broj.");
+            return;
+        }
+        if (amount < 0) amount = 0;
+
+        team.setCoins(amount);
+        persistence.requestSaveDebounced();
+
+        p.sendMessage("§aTeam §e" + team.getName() + " §asada ima §6" + amount + " coins.");
     }
 
     private void broadcastToTeam(Team team, String key, Map<String, String> placeholders) {
@@ -502,19 +627,21 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                     "tpa",
                     "tpaccept",
                     "tpdeny",
-                    "izbaci"
+                    "izbaci",
+                    "coins",
+                    "coinset",
+                    "bounty",
+                    "shop"
             ), args[0]);
         }
 
         String sub = args[0].toLowerCase(Locale.ROOT);
 
         if (args.length == 2) {
-            if (sub.equals("pozovi")) {
+            if (sub.equals("pozovi") || sub.equals("tpa") || sub.equals("bounty")) {
                 return filterPrefix(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[1]);
             }
-            if (sub.equals("tpa")) {
-                return filterPrefix(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[1]);
-            }
+
             if (sub.equals("izbaci")) {
                 Team t = teamService.getTeamOf(p.getUniqueId());
                 if (t == null) return Collections.emptyList();
@@ -524,6 +651,13 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                                 .map(this::nameOrShort)
                                 .distinct()
                                 .toList(),
+                        args[1]
+                );
+            }
+
+            if (sub.equals("coinset")) {
+                return filterPrefix(
+                        teamService.getAllTeams().stream().map(Team::getName).toList(),
                         args[1]
                 );
             }

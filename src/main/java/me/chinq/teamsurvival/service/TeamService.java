@@ -8,6 +8,7 @@ import java.util.*;
 public final class TeamService {
 
     private final Settings settings;
+    private final StarterCoinsService starterCoinsService; // NEW: anti-abuse starter coins
 
     private final Map<String, Team> teamsById = new HashMap<>();
     private final Map<String, String> teamIdByLowerName = new HashMap<>();
@@ -18,8 +19,10 @@ public final class TeamService {
 
     private Runnable onTeamsChanged = () -> {};
 
-    public TeamService(Settings settings, Map<String, Team> initialTeams) {
+    // NEW ctor signature
+    public TeamService(Settings settings, StarterCoinsService starterCoinsService, Map<String, Team> initialTeams) {
         this.settings = settings;
+        this.starterCoinsService = starterCoinsService;
         if (initialTeams != null) teamsById.putAll(initialTeams);
         rebuildIndexes();
     }
@@ -59,13 +62,26 @@ public final class TeamService {
         return (id == null) ? null : teamsById.get(id);
     }
 
+    public Collection<Team> getAllTeams() {
+        return teamsById.values();
+    }
+
     public Team createTeam(UUID leader, String name) {
         String id = generateId();
 
         LinkedHashSet<UUID> members = new LinkedHashSet<>();
         members.add(leader);
 
-        Team team = new Team(id, name, leader, System.currentTimeMillis(), members, null, null);
+        // NEW: starter coins anti-abuse
+        long startCoins;
+        if (starterCoinsService != null) {
+            startCoins = starterCoinsService.claimStartingCoins(leader);
+        } else {
+            startCoins = settings.startingCoins;
+        }
+        if (startCoins < 0) startCoins = 0;
+
+        Team team = new Team(id, name, leader, System.currentTimeMillis(), members, null, null, startCoins);
 
         teamsById.put(id, team);
         teamIdByLowerName.put(name.toLowerCase(Locale.ROOT), id);
@@ -73,6 +89,30 @@ public final class TeamService {
 
         onTeamsChanged.run();
         return team;
+    }
+
+    public long getCoins(Team team) {
+        return (team == null) ? 0L : Math.max(0L, team.getCoins());
+    }
+
+    public void addCoins(Team team, long amount) {
+        if (team == null) return;
+        if (amount <= 0) return;
+        team.addCoins(amount);
+        onTeamsChanged.run();
+    }
+
+    public void addCoins(String teamId, long amount) {
+        Team t = teamsById.get(teamId);
+        addCoins(t, amount);
+    }
+
+    public boolean tryRemoveCoins(Team team, long amount) {
+        if (team == null) return false;
+        if (amount <= 0) return true;
+        boolean ok = team.tryRemoveCoins(amount);
+        if (ok) onTeamsChanged.run();
+        return ok;
     }
 
     public boolean addMember(String teamId, UUID member) {

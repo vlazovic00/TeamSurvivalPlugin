@@ -16,7 +16,19 @@ public final class Team {
     private HomeLocation home; // nullable
     private String colorName;  // nullable
 
-    public Team(String id, String name, UUID leader, long createdAt, LinkedHashSet<UUID> members, HomeLocation home, String colorName) {
+    // NEW: team coins
+    private long coins;
+
+    public Team(
+            String id,
+            String name,
+            UUID leader,
+            long createdAt,
+            LinkedHashSet<UUID> members,
+            HomeLocation home,
+            String colorName,
+            long coins
+    ) {
         this.id = Objects.requireNonNull(id);
         this.name = Objects.requireNonNull(name);
         this.leader = Objects.requireNonNull(leader);
@@ -27,6 +39,8 @@ public final class Team {
 
         this.home = home;
         this.colorName = colorName;
+
+        this.coins = Math.max(0L, coins);
     }
 
     public String getId() { return id; }
@@ -66,5 +80,26 @@ public final class Team {
             if (!u.equals(leader)) return u;
         }
         return null;
+    }
+
+    // ===== coins =====
+    public long getCoins() { return coins; }
+
+    public void setCoins(long coins) {
+        this.coins = Math.max(0L, coins);
+    }
+
+    public void addCoins(long amount) {
+        if (amount <= 0) return;
+        this.coins = Math.max(0L, this.coins + amount);
+    }
+
+    /** returns true if removed */
+    public boolean tryRemoveCoins(long amount) {
+        if (amount <= 0) return true;
+        if (coins < amount) return false;
+        coins -= amount;
+        if (coins < 0) coins = 0;
+        return true;
     }
 }

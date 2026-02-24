@@ -76,8 +76,8 @@ public final class TeamsYamlStorage {
             }
 
             String colorName = s.getString("colorName", null);
-
-            Team t = new Team(id, name, leader, createdAt, members, home, colorName);
+            long coins = s.getLong("coins", 0L);
+            Team t = new Team(id, name, leader, createdAt, members, home, colorName, coins);
             out.put(id, t);
         }
 
@@ -85,39 +85,46 @@ public final class TeamsYamlStorage {
     }
 
     public void saveTeams(Collection<Team> teams) throws Exception {
+
         YamlConfiguration cfg = new YamlConfiguration();
         ConfigurationSection root = cfg.createSection("teams");
 
         for (Team t : teams) {
+
+            // svaka sekcija = jedan team
             ConfigurationSection s = root.createSection(t.getId());
-            s.set("id", t.getId());
+
+            // osnovni podaci
             s.set("name", t.getName());
             s.set("leader", t.getLeader().toString());
             s.set("createdAt", t.getCreatedAt());
 
-            List<String> members = new ArrayList<>();
-            for (UUID u : t.getMembersOrdered()) members.add(u.toString());
+            // members lista
+            List<String> members = t.getMembersOrdered().stream()
+                    .map(UUID::toString)
+                    .toList();
             s.set("members", members);
 
+            // HOME (ako postoji)
             if (t.getHome() != null) {
-                ConfigurationSection hs = s.createSection("home");
-                hs.set("world", t.getHome().world());
-                hs.set("x", t.getHome().x());
-                hs.set("y", t.getHome().y());
-                hs.set("z", t.getHome().z());
-                hs.set("yaw", t.getHome().yaw());
-                hs.set("pitch", t.getHome().pitch());
-            } else {
-                s.set("home", null);
+                s.set("home.world", t.getHome().world());
+                s.set("home.x", t.getHome().x());
+                s.set("home.y", t.getHome().y());
+                s.set("home.z", t.getHome().z());
+                s.set("home.yaw", t.getHome().yaw());
+                s.set("home.pitch", t.getHome().pitch());
             }
 
+            // TEAM COLOR (ako postoji)
             if (t.getColorName() != null) {
-                s.set("colorName", t.getColorName());
-            } else {
-                s.set("colorName", null);
+                s.set("color", t.getColorName());
             }
+
+            // ⭐⭐⭐ TEAM COINS (NOVO)
+            s.set("coins", t.getCoins());
         }
 
+        // snimanje u fajl
         cfg.save(file);
     }
 }

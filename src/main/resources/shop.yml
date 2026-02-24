@@ -1,0 +1,110 @@
+# =========================================================
+# TeamSurvival - shop.yml (GUI shop sa TEAM coins)
+# =========================================================
+# Cena se plaća iz coins tima (zajednički budžet).
+# /tim shop
+#
+# Napomena:
+# - Ako igrač nije u timu: ne može da otvori shop, kupuje iteme, niti prodaje glave.
+# - Glave se prodaju preko dugmeta "Prodaj sve glave" u glavnom meniju.
+# =========================================================
+
+shop:
+  title: "&8Tim Shop"
+  main-size: 27
+
+  categories:
+
+    blocks:
+      name: "&aBlokovi"
+      icon: "BRICKS"
+      slot: 10
+      size: 54
+      items:
+        stone64:
+          slot: 10
+          material: "STONE"
+          amount: 64
+          price: 50
+          name: "&fStone &7x64"
+          lore:
+            - "&7Cena: &6%price% &7(team coins)"
+        deepslate64:
+          slot: 11
+          material: "COBBLED_DEEPSLATE"
+          amount: 64
+          price: 60
+          name: "&fDeepslate &7x64"
+        obsidian16:
+          slot: 12
+          material: "OBSIDIAN"
+          amount: 16
+          price: 200
+          name: "&5Obsidian &7x16"
+
+    armor:
+      name: "&bArmor"
+      icon: "DIAMOND_CHESTPLATE"
+      slot: 12
+      size: 54
+      items:
+        iron_set:
+          slot: 10
+          material: "IRON_CHESTPLATE"
+          amount: 1
+          price: 250
+          name: "&fIron Chestplate"
+          enchants: ["PROTECTION_ENVIRONMENTAL:2", "DURABILITY:2"]
+          flags: ["HIDE_ENCHANTS"]
+        diamond_helmet:
+          slot: 11
+          material: "DIAMOND_HELMET"
+          amount: 1
+          price: 600
+          name: "&bDiamond Helmet"
+          enchants: ["PROTECTION_ENVIRONMENTAL:2", "DURABILITY:2"]
+          flags: ["HIDE_ENCHANTS"]
+
+    tools:
+      name: "&eAlat"
+      icon: "DIAMOND_PICKAXE"
+      slot: 14
+      size: 54
+      items:
+        silk_pick:
+          slot: 10
+          material: "DIAMOND_PICKAXE"
+          amount: 1
+          price: 1200
+          name: "&bSilk Touch Pick"
+          enchants: ["SILK_TOUCH:1", "DIG_SPEED:5", "DURABILITY:3"]
+          flags: ["HIDE_ENCHANTS"]
+        fortune_pick:
+          slot: 11
+          material: "DIAMOND_PICKAXE"
+          amount: 1
+          price: 1500
+          name: "&bFortune Pick"
+          enchants: ["LOOT_BONUS_BLOCKS:3", "DIG_SPEED:5", "DURABILITY:3"]
+          flags: ["HIDE_ENCHANTS"]
+
+    op:
+      name: "&cOP Stvari"
+      icon: "NETHER_STAR"
+      slot: 16
+      size: 54
+      items:
+        god_sword:
+          slot: 10
+          material: "NETHERITE_SWORD"
+          amount: 1
+          price: 5000
+          name: "&cGod Sword"
+          enchants: ["DAMAGE_ALL:5", "FIRE_ASPECT:2", "DURABILITY:3", "MENDING:1"]
+          flags: ["HIDE_ENCHANTS"]
+        elytra:
+          slot: 11
+          material: "ELYTRA"
+          amount: 1
+          price: 6000
+          name: "&dElytra"

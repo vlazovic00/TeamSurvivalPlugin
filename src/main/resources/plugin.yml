@@ -1,6 +1,6 @@
 name: TeamSurvival
 main: me.chinq.teamsurvival.TeamSurvivalPlugin
-version: v2.3
+version: v3.0
 api-version: "1.20"
 author: Chinq
 
@@ -8,8 +8,17 @@ commands:
   tim:
     description: Timovi u survivalu (TeamSurvival)
     usage: /tim
-    aliases: [tik]
+    aliases: [team, teams, tik]
 
   timreload:
     description: Reload config.yml i messages.yml (OP only)
     usage: /timreload
+    permission: teamsurvival.reload
+
+permissions:
+  teamsurvival.reload:
+    description: Dozvola za /timreload
+    default: op
+  teamsurvival.coinset:
+    description: Dozvola za /tim coinset <team> <amount>
+    default: op

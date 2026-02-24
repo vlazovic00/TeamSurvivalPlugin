@@ -7,6 +7,7 @@ errors:
   playerUnknown: "&cIgrač &e%player% &cnije poznat na serveru."
   generic: "&cDošlo je do greške. Pokušaj ponovo."
   noPermission: "&cNemaš dozvolu za ovu komandu."
+  noTeam: "&cMoraš biti u timu da bi koristio ovo. /tim napravi"
 
 reload:
   success: "&aReload uspešan: config.yml i messages.yml su učitani ponovo."

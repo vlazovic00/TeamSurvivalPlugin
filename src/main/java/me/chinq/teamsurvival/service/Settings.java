@@ -27,6 +27,13 @@ public final class Settings {
 
     public int combatTagSeconds;
 
+    // ECONOMY
+    public long startingCoins;
+
+    // Anti-abuse za starter coins (da nema create/disband glitch)
+    public boolean starterCoinsOnceEver;
+    public int starterCoinsCooldownHours;
+
     public double warmupCancelMoveDistance;
     public double warmupCancelMoveDistanceSquared;
 
@@ -52,6 +59,9 @@ public final class Settings {
             int tpaExpireSeconds,
             int tpaWarmupSeconds,
             int combatTagSeconds,
+            long startingCoins,
+            boolean starterCoinsOnceEver,
+            int starterCoinsCooldownHours,
             double warmupCancelMoveDistance,
             boolean friendlyFireEnabled,
             boolean friendlyFireStrictExplosions,
@@ -72,11 +82,20 @@ public final class Settings {
         this.tpaExpireSeconds = tpaExpireSeconds;
         this.tpaWarmupSeconds = tpaWarmupSeconds;
         this.combatTagSeconds = combatTagSeconds;
+
+        this.startingCoins = Math.max(0L, startingCoins);
+
+        this.starterCoinsOnceEver = starterCoinsOnceEver;
+        this.starterCoinsCooldownHours = Math.max(0, starterCoinsCooldownHours);
+
         this.warmupCancelMoveDistance = warmupCancelMoveDistance;
         this.warmupCancelMoveDistanceSquared = warmupCancelMoveDistance * warmupCancelMoveDistance;
+
         this.friendlyFireEnabled = friendlyFireEnabled;
         this.friendlyFireStrictExplosions = friendlyFireStrictExplosions;
+
         this.showCoordinatesInPing = showCoordinatesInPing;
+
         this.locator = locator;
         this.scoreboard = scoreboard;
         this.persistence = persistence;
@@ -112,6 +131,15 @@ public final class Settings {
         int tpaWarmupSeconds = c.getInt("tpa.tpaWarmupSeconds", 5);
 
         int combatTagSeconds = c.getInt("combat.combatTagSeconds", 15);
+
+        // ECONOMY: starting coins
+        long startingCoins = c.getLong("economy.starting-coins", 0L);
+        if (startingCoins < 0) startingCoins = 0;
+
+        // Anti-abuse
+        boolean starterCoinsOnceEver = c.getBoolean("economy.starter-abuse.once-ever", true);
+        int starterCoinsCooldownHours = c.getInt("economy.starter-abuse.cooldown-hours", 72);
+        if (starterCoinsCooldownHours < 0) starterCoinsCooldownHours = 0;
 
         double moveCancel = c.getDouble("warmup.cancelMoveDistanceBlocks", 0.2);
 
@@ -154,6 +182,9 @@ public final class Settings {
                 tpaExpireSeconds,
                 tpaWarmupSeconds,
                 combatTagSeconds,
+                startingCoins,
+                starterCoinsOnceEver,
+                starterCoinsCooldownHours,
                 moveCancel,
                 friendlyFireEnabled,
                 friendlyFireStrictExplosions,
@@ -185,6 +216,13 @@ public final class Settings {
         this.tpaWarmupSeconds = s.tpaWarmupSeconds;
 
         this.combatTagSeconds = s.combatTagSeconds;
+
+        // ECONOMY
+        this.startingCoins = s.startingCoins;
+
+        // Anti-abuse
+        this.starterCoinsOnceEver = s.starterCoinsOnceEver;
+        this.starterCoinsCooldownHours = s.starterCoinsCooldownHours;
 
         this.warmupCancelMoveDistance = s.warmupCancelMoveDistance;
         this.warmupCancelMoveDistanceSquared = s.warmupCancelMoveDistanceSquared;
