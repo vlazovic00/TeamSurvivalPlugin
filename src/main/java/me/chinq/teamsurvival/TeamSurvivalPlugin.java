@@ -14,6 +14,7 @@ import me.chinq.teamsurvival.storage.TeamsYamlStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import me.chinq.teamsurvival.util.StartupLogger;
 
 import java.util.Map;
 
@@ -27,6 +28,7 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
     private StarterCoinsService starterCoinsService;    // NEW
 
     private SupplyDropService supplyDropService;
+
     private TeamService teamService;
     private PersistenceService persistenceService;
 
@@ -34,6 +36,7 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
     private CombatTagService combatTagService;
     private TeleportService teleportService;
     private InviteService inviteService;
+    private EarningsService earningsService;
     private TpaService tpaService;
 
     private ScoreboardService scoreboardService;
@@ -55,6 +58,7 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new SupplyDropListener(supplyDropService), this);
 
         this.settings = Settings.load(this);
+        new StartupLogger(this, settings).printStartup();
         this.messages = new MessageService(this);
 
         this.teamsStorage = new TeamsYamlStorage(this);
@@ -66,6 +70,8 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         this.starterCoinsService = new StarterCoinsService(this, settings, playersStorage);
 
         // NEW ctor signature
+        this.earningsService = new EarningsService(settings, teamService);
+        Bukkit.getPluginManager().registerEvents(new me.chinq.teamsurvival.listener.EarningsListener(earningsService), this);
         this.teamService = new TeamService(settings, starterCoinsService, loadedTeams);
         this.persistenceService = new PersistenceService(this, settings, teamsStorage, teamService);
 
@@ -154,11 +160,6 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         } else {
             getLogger().severe("Komanda /timreload nije registrovana (plugin.yml).");
         }
-
-        getLogger().info("========================================");
-        getLogger().info(" TeamSurvival uključen ✅");
-        getLogger().info(" Creator: Chinq");
-        getLogger().info("========================================");
     }
 
     /** Full hot reload: config.yml + messages.yml + restart svih config-driven schedulera. */

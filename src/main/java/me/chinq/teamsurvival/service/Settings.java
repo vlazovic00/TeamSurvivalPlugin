@@ -34,6 +34,9 @@ public final class Settings {
     public boolean starterCoinsOnceEver;
     public int starterCoinsCooldownHours;
 
+    // NEW: earnings (coins while playing)
+    public EarningsSettings earnings;
+
     public double warmupCancelMoveDistance;
     public double warmupCancelMoveDistanceSquared;
 
@@ -62,6 +65,7 @@ public final class Settings {
             long startingCoins,
             boolean starterCoinsOnceEver,
             int starterCoinsCooldownHours,
+            EarningsSettings earnings,
             double warmupCancelMoveDistance,
             boolean friendlyFireEnabled,
             boolean friendlyFireStrictExplosions,
@@ -87,6 +91,8 @@ public final class Settings {
 
         this.starterCoinsOnceEver = starterCoinsOnceEver;
         this.starterCoinsCooldownHours = Math.max(0, starterCoinsCooldownHours);
+
+        this.earnings = earnings;
 
         this.warmupCancelMoveDistance = warmupCancelMoveDistance;
         this.warmupCancelMoveDistanceSquared = warmupCancelMoveDistance * warmupCancelMoveDistance;
@@ -141,6 +147,9 @@ public final class Settings {
         int starterCoinsCooldownHours = c.getInt("economy.starter-abuse.cooldown-hours", 72);
         if (starterCoinsCooldownHours < 0) starterCoinsCooldownHours = 0;
 
+        // NEW: earnings settings
+        EarningsSettings earnings = loadEarnings(c);
+
         double moveCancel = c.getDouble("warmup.cancelMoveDistanceBlocks", 0.2);
 
         boolean friendlyFireEnabled = c.getBoolean("friendlyFire.friendlyFireEnabled", false);
@@ -185,6 +194,7 @@ public final class Settings {
                 startingCoins,
                 starterCoinsOnceEver,
                 starterCoinsCooldownHours,
+                earnings,
                 moveCancel,
                 friendlyFireEnabled,
                 friendlyFireStrictExplosions,
@@ -194,6 +204,69 @@ public final class Settings {
                 persistence,
                 teamName
         );
+    }
+
+    private static EarningsSettings loadEarnings(FileConfiguration c) {
+        EarningsSettings es = new EarningsSettings();
+
+        es.enabled = c.getBoolean("economy.earnings.enabled", true);
+        es.globalMultiplier = c.getDouble("economy.earnings.global-multiplier", 1.0);
+
+        // actionbar
+        es.actionbar.enabled = c.getBoolean("economy.earnings.actionbar.enabled", true);
+        es.actionbar.minCoinsToShow = c.getLong("economy.earnings.actionbar.min-coins-to-show", 1L);
+
+        // diminishing
+        es.diminishing.enabled = c.getBoolean("economy.earnings.diminishing.enabled", true);
+        es.diminishing.windowSeconds = c.getInt("economy.earnings.diminishing.window-seconds", 600);
+        es.diminishing.halfLifeActions = c.getDouble("economy.earnings.diminishing.half-life-actions", 80.0);
+        es.diminishing.minFactor = c.getDouble("economy.earnings.diminishing.min-factor", 0.15);
+        es.diminishing.perCategory = c.getBoolean("economy.earnings.diminishing.per-category", true);
+
+        // anti-farm placed blocks
+        es.antiFarm.placedBlockTtlSeconds = c.getInt("economy.earnings.anti-farm.placed-block-ttl-seconds", 1800);
+        es.antiFarm.placedBlockFactor = c.getDouble("economy.earnings.anti-farm.placed-block-factor", 0.0);
+
+        // mining
+        es.mining.enabled = c.getBoolean("economy.earnings.mining.enabled", true);
+        es.mining.def = c.getDouble("economy.earnings.mining.default", 0.05);
+        EarningsSettings.loadMaterialMap(c, "economy.earnings.mining.materials", es.mining.materials);
+
+        // building
+        es.building.enabled = c.getBoolean("economy.earnings.building.enabled", true);
+        es.building.def = c.getDouble("economy.earnings.building.default", 0.02);
+        EarningsSettings.loadMaterialMap(c, "economy.earnings.building.materials", es.building.materials);
+
+        // farming
+        es.farming.enabled = c.getBoolean("economy.earnings.farming.enabled", true);
+        es.farming.def = c.getDouble("economy.earnings.farming.mature-crop", 0.5);
+        EarningsSettings.loadMaterialMap(c, "economy.earnings.farming.crops", es.farming.materials);
+
+        // hunting
+        es.hunting.enabled = c.getBoolean("economy.earnings.hunting.enabled", true);
+        es.hunting.def = c.getDouble("economy.earnings.hunting.default", 0.2);
+        EarningsSettings.loadEntityMap(c, "economy.earnings.hunting.entities", es.hunting.entities);
+
+        // fishing
+        es.fishing.enabled = c.getBoolean("economy.earnings.fishing.enabled", true);
+        es.fishing.perCatch = c.getDouble("economy.earnings.fishing.per-catch", 0.6);
+
+        // crafting
+        es.crafting.enabled = c.getBoolean("economy.earnings.crafting.enabled", true);
+        es.crafting.def = c.getDouble("economy.earnings.crafting.default", 0.05);
+        EarningsSettings.loadMaterialMap(c, "economy.earnings.crafting.items", es.crafting.materials);
+
+        // smelting
+        es.smelting.enabled = c.getBoolean("economy.earnings.smelting.enabled", true);
+        es.smelting.def = c.getDouble("economy.earnings.smelting.default", 0.05);
+        EarningsSettings.loadMaterialMap(c, "economy.earnings.smelting.items", es.smelting.materials);
+
+        // exploring
+        es.exploring.enabled = c.getBoolean("economy.earnings.exploring.enabled", true);
+        es.exploring.blocksPerReward = c.getInt("economy.earnings.exploring.blocks-per-reward", 120);
+        es.exploring.coinsPerReward = c.getDouble("economy.earnings.exploring.coins-per-reward", 0.4);
+
+        return es;
     }
 
     /** Update-uje postojeći Settings objekt da svi servisi vide nove vrednosti bez rekreiranja. */
@@ -223,6 +296,9 @@ public final class Settings {
         // Anti-abuse
         this.starterCoinsOnceEver = s.starterCoinsOnceEver;
         this.starterCoinsCooldownHours = s.starterCoinsCooldownHours;
+
+        // NEW
+        this.earnings = s.earnings;
 
         this.warmupCancelMoveDistance = s.warmupCancelMoveDistance;
         this.warmupCancelMoveDistanceSquared = s.warmupCancelMoveDistanceSquared;

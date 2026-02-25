@@ -1,123 +1,348 @@
 # =========================================================
-# TeamSurvival - config (SR)
-# Sve vrednosti su u sekundama, osim gde piše drugačije.
+# TeamSurvival - config.yml (SR)
+# Verzija: 1.0 (primer / template)
+#
+# ✅ Sve vrednosti u sekundama, osim gde piše drugačije.
+# ✅ Boje u porukama koriste Minecraft color codes sa &.
+# ✅ Ako ostaviš listu praznu: [] znači "bez ograničenja".
 # =========================================================
 
-# -------------------------
-# TEAM SETUP
-# -------------------------
+# ---------------------------------------------------------
+# 1) TEAM SETUP
+# ---------------------------------------------------------
+# Podešavanja oko timova: max broj članova, naziv, svetovi...
 teams:
   # Maksimalno igrača u timu
   maxTeamSize: 3
 
-  # Ako je prazno -> svi svetovi dozvoljeni
+  # Ako je prazno -> svi svetovi su dozvoljeni
+  # Primer: ["world", "world_nether", "world_the_end"]
   allowedWorlds: []
 
   # Pravila za ime tima
   teamNameMinLength: 2
   teamNameMaxLength: 16
-  # Dozvoljeno: slova/brojevi/_/-
+
+  # Regex: Dozvoljeno samo slova/brojevi/_/-
+  # (bez razmaka, č, ć, š itd.)
   teamNamePattern: "^[A-Za-z0-9_\\-]+$"
 
+
+# ---------------------------------------------------------
+# 2) ECONOMY (TEAM COINS)
+# ---------------------------------------------------------
+# TeamSurvival koristi timsku ekonomiju (coins su na timu).
 economy:
+  # Koliko coins dobije novi tim/igrač na startu
   starting-coins: 500
 
+  # Anti abuse: zaštita da starter coins ne mogu da se farmuju
   starter-abuse:
+    # true -> može samo jednom u životu (na serveru)
+    # false -> može ponovo nakon cooldown-a
     once-ever: true
+    # Koliko sati mora da prođe da bi opet dobio starter (ako once-ever=false)
     cooldown-hours: 72
-# -------------------------
-# INVITES
-# -------------------------
+
+
+  # -------------------------------------------------------
+  # 2.1) EARNINGS (Coins dok igraš)
+  # -------------------------------------------------------
+  # Sistem automatski nagrađuje coins dok igrač radi:
+  # mining, building, farming, hunting, crafting, smelting,
+  # fishing, exploring…
+  earnings:
+    enabled: true
+
+    # Globalni multiplikator za sve nagrade (brz balans knob)
+    # 1.0 = normalno, 2.0 = duplo, 0.5 = pola
+    global-multiplier: 1.0
+
+    # Poruka u ActionBar-u kad dobije coins
+    actionbar:
+      enabled: true
+      # Minimalno coins da bi se prikazalo u actionbar-u
+      min-coins-to-show: 1
+
+
+    # -----------------------------------------------------
+    # Diminishing Returns (anti-spam / anti-farm)
+    # -----------------------------------------------------
+    # Što više radiš ISTU kategoriju u kratkom vremenu,
+    # nagrada se smanjuje (ali nikad ne pada ispod min-factor).
+    diminishing:
+      enabled: true
+
+      # Memorija aktivnosti po igraču (sekunde)
+      # Veći window = sporije opada / sporije se vraća
+      window-seconds: 600
+
+      # Posle ~N akcija iste kategorije dobiješ oko 50% manje
+      # (pre nego što decay odradi svoje)
+      half-life-actions: 80
+
+      # Nikad ne padne ispod ovog faktora (0.15 = 15%)
+      min-factor: 0.15
+
+      # true = mining/building/farming… imaju odvojene brojače
+      # false = sve ulazi u jedan brojač (strože)
+      per-category: true
+
+
+    # -----------------------------------------------------
+    # Anti-Farm: Place -> Break loop
+    # -----------------------------------------------------
+    # Ako neko postavi blok pa ga odmah polomi:
+    # nagrada se množi sa placed-block-factor.
+    anti-farm:
+      # Koliko dugo (sekunde) pamti da je blok bio postavljen
+      placed-block-ttl-seconds: 1800
+
+      # Ako je blok bio postavljen u TTL periodu:
+      # 0.0 = nema coins (najsigurnije)
+      # 0.2 = dobije 20% nagrade
+      placed-block-factor: 0.0
+
+
+    # -----------------------------------------------------
+    # MINING / BREAKING
+    # -----------------------------------------------------
+    # Coins za lomljenje blokova. Najviše se koristi za rude.
+    mining:
+      enabled: true
+
+      # Default (ako materijal nije u listi)
+      default: 0.05
+
+      # Coins po materijalu (blok koji se lomi)
+      materials:
+        STONE: 0.02
+        DEEPSLATE: 0.02
+
+        COAL_ORE: 1.5
+        COPPER_ORE: 1.0
+        IRON_ORE: 2.0
+        GOLD_ORE: 3.0
+
+        REDSTONE_ORE: 2.0
+        LAPIS_ORE: 2.0
+
+        DIAMOND_ORE: 8.0
+        EMERALD_ORE: 10.0
+        ANCIENT_DEBRIS: 25.0
+
+
+    # -----------------------------------------------------
+    # BUILDING / PLACING
+    # -----------------------------------------------------
+    # Coins za postavljanje blokova (gradnja baza).
+    # Diminishing + anti-farm služe da ne bude spam farm.
+    building:
+      enabled: true
+      default: 0.02
+
+      materials:
+        OAK_PLANKS: 0.03
+        SPRUCE_PLANKS: 0.03
+        COBBLESTONE: 0.02
+        STONE_BRICKS: 0.04
+        GLASS: 0.05
+        TORCH: 0.01
+
+
+    # -----------------------------------------------------
+    # FARMING (zreli cropovi)
+    # -----------------------------------------------------
+    # Nagrada ide samo kad je crop zreo (Ageable max age).
+    farming:
+      enabled: true
+
+      # Default nagrada za zreli crop (fallback)
+      mature-crop: 0.5
+
+      # Po tipu crop blocka
+      crops:
+        WHEAT: 0.5
+        CARROTS: 0.5
+        POTATOES: 0.5
+        BEETROOTS: 0.5
+        NETHER_WART: 1.0
+
+
+    # -----------------------------------------------------
+    # HUNTING / MOB KILLS
+    # -----------------------------------------------------
+    # Coins kad igrač ubije mob-a (po EntityType).
+    hunting:
+      enabled: true
+
+      # Default ako entity nije u listi
+      default: 0.2
+
+      entities:
+        ZOMBIE: 0.3
+        SKELETON: 0.35
+        CREEPER: 0.5
+        ENDERMAN: 1.0
+        BLAZE: 0.8
+        WITHER_SKELETON: 1.2
+
+
+    # -----------------------------------------------------
+    # FISHING
+    # -----------------------------------------------------
+    # Coins kad igrač uhvati ribu (CAUGHT_FISH).
+    fishing:
+      enabled: true
+      per-catch: 0.6
+
+
+    # -----------------------------------------------------
+    # CRAFTING
+    # -----------------------------------------------------
+    # Coins kada igrač craftuje item.
+    # Napomena: crafting se može spamovati, zato diminishing
+    # ima veliku ulogu!
+    crafting:
+      enabled: true
+      default: 0.05
+
+      items:
+        TORCH: 0.02
+        CHEST: 0.1
+        FURNACE: 0.1
+        ENCHANTING_TABLE: 2.0
+
+
+    # -----------------------------------------------------
+    # SMELTING (vadjenje iz peći)
+    # -----------------------------------------------------
+    # Coins kad igrač uzme item iz furnace (FurnaceExtractEvent).
+    # Nagrada se množi sa količinom (amount).
+    smelting:
+      enabled: true
+      default: 0.05
+
+      items:
+        IRON_INGOT: 0.2
+        GOLD_INGOT: 0.3
+
+
+    # -----------------------------------------------------
+    # EXPLORING (kretanje / distanca)
+    # -----------------------------------------------------
+    # Coins po pređenoj distanci. Dobro za “survival feeling”.
+    exploring:
+      enabled: true
+
+      # Svakih X blokova distance -> reward
+      blocks-per-reward: 120
+
+      # Koliko coins dobije po tom “step-u”
+      coins-per-reward: 0.4
+
+
+# ---------------------------------------------------------
+# 3) INVITES (pozivi u tim)
+# ---------------------------------------------------------
+# Koliko dugo poziv važi pre nego što istekne.
 invites:
-  # Koliko dugo poziv važi
   inviteExpireSeconds: 60
 
 
-# -------------------------
-# TEAM HOME / TELEPORT
-# -------------------------
+# ---------------------------------------------------------
+# 4) TEAM HOME / TELEPORT
+# ---------------------------------------------------------
+# Podešava /tim sethome i /tim home (warmup/cooldown).
 home:
   # Cooldown za /tim sethome (po timu)
   homeCooldownSeconds: 600
 
-  # Warmup za /tim home
+  # Warmup za /tim home (koliko se čeka pre teleport-a)
   homeWarmupSeconds: 5
 
   # Cooldown za /tim home (po igraču)
   homeTeleportCooldownSeconds: 120
 
 
-# -------------------------
-# RESPAWN
-# -------------------------
+# ---------------------------------------------------------
+# 5) RESPAWN
+# ---------------------------------------------------------
+# Da li respawn ide na team home (ako postoji).
 respawn:
-  # true = respawn ide na team home (ako postoji)
   respawnToTeamHome: true
 
 
-# -------------------------
-# TPA (TEAM TELEPORT REQUEST)
-# -------------------------
+# ---------------------------------------------------------
+# 6) TPA (Team Teleport Request)
+# ---------------------------------------------------------
+# /tim tpa -> /tim tpaccept, sa warmup/cooldown pravilima.
 tpa:
-  # Cooldown za slanje/teleport nakon uspeha (po requester-u)
+  # Cooldown posle uspešnog teleport-a (po requester-u)
   tpaCooldownSeconds: 180
 
-  # Istek zahteva
+  # Isteče zahtev posle X sekundi
   tpaExpireSeconds: 60
 
   # Warmup nakon /tim tpaccept
   tpaWarmupSeconds: 5
 
 
-# -------------------------
-# GLOBAL WARMUP RULES
-# -------------------------
+# ---------------------------------------------------------
+# 7) GLOBAL WARMUP RULES
+# ---------------------------------------------------------
+# Pravilo za otkazivanje warmup-a ako se igrač pomeri.
 warmup:
-  # Ako igrač tokom warmup-a pomeri više od ove distance -> cancel
+  # Ako igrač pomeri više od X blokova -> cancel teleport
   cancelMoveDistanceBlocks: 0.2
 
 
-# -------------------------
-# COMBAT TAG
-# -------------------------
+# ---------------------------------------------------------
+# 8) COMBAT TAG
+# ---------------------------------------------------------
+# Koliko traje combat tag od poslednjeg damage-a.
 combat:
-  # Koliko traje combat-tag od poslednjeg damage-a
   combatTagSeconds: 15
 
 
-# -------------------------
-# FRIENDLY FIRE
-# -------------------------
+# ---------------------------------------------------------
+# 9) FRIENDLY FIRE
+# ---------------------------------------------------------
+# Kontroliše da li teammate-ovi mogu da se udaraju.
 friendlyFire:
   # false = OFF (blokira damage između teammate-ova)
   friendlyFireEnabled: false
 
-  # true = strogo blokira i TNT sa player source protiv teammate-a
+  # true = strogo blokira i TNT/explozije sa player source protiv teammate-a
   friendlyFireStrictExplosions: true
 
 
-# -------------------------
-# /PING SETTINGS
-# -------------------------
+# ---------------------------------------------------------
+# 10) /PING SETTINGS
+# ---------------------------------------------------------
+# Ako tvoj plugin /ping prikazuje koordinate (opciono).
 ping:
-  # true = pokazuje koordinate u /ping (ako plugin to koristi)
   showCoordinatesInPing: false
 
 
-# -------------------------
-# LOCATOR (ACTIONBAR TEAMMATES)
-# -------------------------
+# ---------------------------------------------------------
+# 11) LOCATOR (ActionBar teammate info)
+# ---------------------------------------------------------
+# Prikazuje teammate-ove u ActionBar-u (distance/pravac).
 locator:
   enabled: true
-  # 20 ticks = 1 sekund
+
+  # 20 ticks = 1 sekunda
   intervalTicks: 20
-  # Koliko teammate-ova maksimalno prikazati u ActionBar-u
+
+  # Maksimalno teammate-ova u prikazu
   maxEntries: 4
 
 
-# -------------------------
-# SCOREBOARD TEAMS / COLORS
-# -------------------------
+# ---------------------------------------------------------
+# 12) SCOREBOARD TEAMS / COLORS
+# ---------------------------------------------------------
+# Scoreboard timovi: boje i syncing na join.
 scoreboard:
   enabled: true
 
@@ -130,7 +355,7 @@ scoreboard:
   # Prefix za scoreboard teamove
   teamPrefix: "ts_"
 
-  # Deterministička paleta boja (persistuje se kao colorName u teams.yml)
+  # Paleta boja za timove (deterministički dodeljuje)
   colorPalette:
     - AQUA
     - GREEN
@@ -146,9 +371,10 @@ scoreboard:
     - DARK_RED
 
 
-# -------------------------
-# DATA SAVE / PERSISTENCE
-# -------------------------
+# ---------------------------------------------------------
+# 13) DATA SAVE / PERSISTENCE
+# ---------------------------------------------------------
+# Debounce i periodični save (failsafe).
 persistence:
   # Debounce: 40 ticks = 2s
   debounceSaveTicks: 40
@@ -158,27 +384,28 @@ persistence:
 
 
 # =========================================================
-# REWARDS SYSTEM (periodične nagrade)
+# 14) REWARDS SYSTEM (periodične nagrade)
 # =========================================================
+# Sistem koji na interval dodeljuje nagradu (random ili svima).
 rewards:
   enabled: true
 
   # Na koliko sekundi se dodeljuju nagrade
   intervalSeconds: 1800
 
-  # true = SVAKI online igrač dobije nagradu na interval
-  # false = samo 1 random igrač dobije nagradu na interval
+  # true = svaki online igrač dobije nagradu
+  # false = samo 1 random online igrač dobije nagradu
   giveToAllOnline: false
 
-  # Ako je reward KIT (više itema), a ti ne staviš "display",
-  # ovo će se koristiti kao fallback.
+  # Ako je reward KIT, a ne staviš "display", koristi se ovo
   kitDisplayFallback: "&bSpecijalni kit"
 
+  # Vatrometi oko igrača kada dobije reward
   fireworks:
     enabled: true
     radius: 6
 
-    # Koliko vatrometa ide po rarity (možeš da pumpaš brutalno)
+    # Koliko vatrometa po rarity (više = jače)
     byRarity:
       common: 4
       uncommon: 8
@@ -187,7 +414,7 @@ rewards:
       legendary: 35
       mythic: 55
 
-  # Nagrade (WEIGHT = šansa; veći weight = češće)
+  # Lista reward-ova (WEIGHT = šansa; veći weight = češće)
   items:
     # -------------------------
     # COMMON
@@ -393,15 +620,16 @@ rewards:
 
 
 # =========================================================
-# SUPPLY DROPS (random chest u border-u)
+# 15) SUPPLY DROPS (random chest u border-u)
 # =========================================================
+# Random chest spawn na interval, sa loot tabelom.
 supplyDrops:
   enabled: true
 
-  # Ako ostaviš prazno -> uzme prvi world sa servera
+  # Ako je prazno -> uzima prvi world sa servera
   world: ""
 
-  # Na koji interval se spawnuje supply chest
+  # Na koji interval se spawnuje supply chest (sekunde)
   intervalSeconds: 3600
 
   # Ako niko ne otvori chest, briše se posle X sekundi
@@ -414,17 +642,16 @@ supplyDrops:
     expireWarning: "&6&l[SUPPLY] &eSupply chest će biti obrisan za &c%time%&e ako ga niko ne otvori!"
     expired: "&6&l[SUPPLY] &cSupply chest je istekao i obrisan je."
 
-  # Koliko blokova unutra od border-a (da ne padne baš na ivicu)
+  # Koliko blokova unutra od border-a (da ne padne na samu ivicu)
   borderMarginBlocks: 8
 
   # Koliko sekundi nakon otvaranja chest nestaje
   removeAfterOpenSeconds: 10
 
-  # Hard cap koliko daleko od centra/igraca sme da baci drop
-  # (da ne ode na milione blokova)
+  # Hard cap radius (da ne ode u milion blokova)
   maxRadiusBlocks: 2000
 
-  # true = spawn oko igraca (najbezbednije)
+  # true = spawn oko igrača (najbezbednije)
   # false = spawn oko world spawna
   preferNearPlayers: false
 
@@ -445,11 +672,10 @@ supplyDrops:
     perBurst: 2
 
   loot:
-    # Koliko itema ukupno ubaci u chest (random između min i max)
+    # Koliko itema ukupno ubaci u chest (random min-max)
     minItems: 1
     maxItems: 2
 
-    # Lista itema koji mogu da se pojave u chestu
     items:
       - material: NETHERITE_SWORD
         amount: 1
