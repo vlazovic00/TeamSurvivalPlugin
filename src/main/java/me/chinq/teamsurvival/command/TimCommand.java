@@ -31,6 +31,9 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
     private final BountyService bountyService;
     private final ShopService shopService;
 
+    // NEW: claims
+    private final ClaimService claims;
+
     public TimCommand(
             Settings settings,
             MessageService msg,
@@ -42,7 +45,8 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
             InviteService invites,
             TpaService tpa,
             BountyService bountyService,
-            ShopService shopService
+            ShopService shopService,
+            ClaimService claims
     ) {
         this.settings = settings;
         this.msg = msg;
@@ -56,6 +60,8 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
 
         this.bountyService = bountyService;
         this.shopService = shopService;
+
+        this.claims = claims;
     }
 
     @Override
@@ -130,6 +136,24 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
+            // ===== claims =====
+            case "claim" -> {
+                if (claims == null) {
+                    msg.sendPrefixed(p, "claims.disabled");
+                    return true;
+                }
+                claims.claimHere(p);
+                return true;
+            }
+            case "unclaim" -> {
+                if (claims == null) {
+                    msg.sendPrefixed(p, "claims.disabled");
+                    return true;
+                }
+                claims.unclaimHere(p);
+                return true;
+            }
+
             // ===== economy =====
             case "coins", "bal", "novac" -> {
                 Team t = teamService.getTeamOf(p.getUniqueId());
@@ -192,6 +216,10 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
         msg.sendRaw(p, msg.colorize("&7/tim bounty <igrac> <amount> &8- &fpostavi bounty (skida coins timu)"));
         msg.sendRaw(p, msg.colorize("&7/tim shop &8- &fshop (kupi iteme / prodaj glave)"));
         msg.sendRaw(p, msg.colorize("&7/tim coinset <team> <amount> &8- &f(admin) set coins timu"));
+
+        msg.sendRaw(p, msg.colorize("&8&l----------------"));
+        msg.sendRaw(p, msg.colorize("&7/tim claim &8- &fclaimuj chunk (skida coins timu)"));
+        msg.sendRaw(p, msg.colorize("&7/tim unclaim &8- &funclaimuj chunk"));
     }
 
     private void handleCreate(Player p, String[] args) {
@@ -297,6 +325,12 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
         ))));
         msg.sendRaw(p, msg.colorize(homeText));
         msg.sendRaw(p, msg.colorize("&7Coins: &6" + team.getCoins()));
+
+        // optional: show claim count if enabled
+        if (claims != null && settings.claims != null && settings.claims.enabled()) {
+            int count = claims.getClaimCount(team.getId());
+            msg.sendRaw(p, msg.colorize("&7Claims: &b" + count));
+        }
     }
 
     private void handleSetHome(Player p) {
@@ -628,6 +662,8 @@ public final class TimCommand implements CommandExecutor, TabCompleter {
                     "tpaccept",
                     "tpdeny",
                     "izbaci",
+                    "claim",
+                    "unclaim",
                     "coins",
                     "coinset",
                     "bounty",

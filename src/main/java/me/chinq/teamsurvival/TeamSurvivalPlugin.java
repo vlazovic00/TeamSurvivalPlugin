@@ -2,19 +2,16 @@ package me.chinq.teamsurvival;
 
 import me.chinq.teamsurvival.command.TimCommand;
 import me.chinq.teamsurvival.command.TimReloadCommand;
-import me.chinq.teamsurvival.listener.BountyAndShopListener;
-import me.chinq.teamsurvival.listener.ChatListener;
-import me.chinq.teamsurvival.listener.GameplayListener;
-import me.chinq.teamsurvival.listener.JoinListener;
-import me.chinq.teamsurvival.listener.SupplyDropListener;
+import me.chinq.teamsurvival.listener.*;
 import me.chinq.teamsurvival.model.Team;
 import me.chinq.teamsurvival.service.*;
+import me.chinq.teamsurvival.storage.ClaimsYamlStorage;
 import me.chinq.teamsurvival.storage.PlayersYamlStorage;
 import me.chinq.teamsurvival.storage.TeamsYamlStorage;
+import me.chinq.teamsurvival.util.StartupLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
-import me.chinq.teamsurvival.util.StartupLogger;
 
 import java.util.Map;
 
@@ -24,8 +21,11 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
     private MessageService messages;
 
     private TeamsYamlStorage teamsStorage;
-    private PlayersYamlStorage playersStorage;          // NEW
-    private StarterCoinsService starterCoinsService;    // NEW
+    private PlayersYamlStorage playersStorage;
+    private StarterCoinsService starterCoinsService;
+
+    private ClaimsYamlStorage claimsStorage;
+    private ClaimService claimService;
 
     private SupplyDropService supplyDropService;
 
@@ -44,7 +44,6 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
 
     private RewardService rewardService;
 
-    // NEW
     private BountyService bountyService;
     private ShopService shopService;
 
@@ -52,7 +51,6 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
-        // services that depend on config (and have schedulers)
         this.supplyDropService = new SupplyDropService(this);
         this.supplyDropService.start();
         Bukkit.getPluginManager().registerEvents(new SupplyDropListener(supplyDropService), this);
@@ -64,16 +62,19 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         this.teamsStorage = new TeamsYamlStorage(this);
         Map<String, Team> loadedTeams = teamsStorage.loadTeams();
 
-        // NEW: players.yml + anti-abuse starter coins
         this.playersStorage = new PlayersYamlStorage(this);
         this.playersStorage.load();
         this.starterCoinsService = new StarterCoinsService(this, settings, playersStorage);
 
-        // NEW ctor signature
-        this.earningsService = new EarningsService(settings, teamService);
-        Bukkit.getPluginManager().registerEvents(new me.chinq.teamsurvival.listener.EarningsListener(earningsService), this);
         this.teamService = new TeamService(settings, starterCoinsService, loadedTeams);
-        this.persistenceService = new PersistenceService(this, settings, teamsStorage, teamService);
+
+        this.claimsStorage = new ClaimsYamlStorage(this);
+        this.claimService = new ClaimService(settings, messages, teamService, claimsStorage.loadClaims());
+
+        this.persistenceService = new PersistenceService(this, settings, teamsStorage, teamService, claimsStorage, claimService);
+
+        this.earningsService = new EarningsService(settings, teamService);
+        Bukkit.getPluginManager().registerEvents(new EarningsListener(earningsService), this);
 
         this.teamChatService = new TeamChatService();
         this.combatTagService = new CombatTagService(settings);
@@ -84,29 +85,24 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         this.scoreboardService = new ScoreboardService(settings, messages, teamService, persistenceService);
         this.locatorService = new LocatorService(this, settings, messages, teamService);
 
-        // NEW: bounty + shop
         this.bountyService = new BountyService(this, teamService);
         this.shopService = new ShopService(this, teamService, messages);
 
-        // bind cross-service callbacks
         teamService.bindOnTeamsChanged(() -> {
             persistenceService.requestSaveDebounced();
             scoreboardService.syncAll();
         });
+        claimService.bindOnClaimsChanged(() -> persistenceService.requestSaveDebounced());
 
-        // scoreboard boot fixes
         if (settings.scoreboard.enabled() && settings.scoreboard.resetOnEnable()) {
             scoreboardService.resetAllTsTeams();
         }
         scoreboardService.syncAll();
 
-        // start locator
         locatorService.start();
 
-        // rewards (random rewards on interval)
         this.rewardService = new RewardService(this, messages);
 
-        // listeners
         Bukkit.getPluginManager().registerEvents(
                 new GameplayListener(settings, messages, teamService, teleportService, combatTagService),
                 this
@@ -115,23 +111,22 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
                 new ChatListener(messages, teamService, teamChatService),
                 this
         );
-
-        // JoinListener sada prima bountyService da apply bounty nick na join
         Bukkit.getPluginManager().registerEvents(
                 new JoinListener(this, settings, scoreboardService, bountyService),
                 this
         );
-
-        // NEW: bounty + head drop + shop GUI
         Bukkit.getPluginManager().registerEvents(
                 new BountyAndShopListener(teamService, bountyService, shopService),
                 this
         );
 
-        // apply bounty names for online players (ako radiš /reload ili plugman)
+        Bukkit.getPluginManager().registerEvents(
+                new ClaimProtectionListener(settings, messages, claimService),
+                this
+        );
+
         bountyService.applyAllOnline();
 
-        // command /tim
         PluginCommand cmd = getCommand("tim");
         if (cmd != null) {
             TimCommand timCommand = new TimCommand(
@@ -145,7 +140,8 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
                     inviteService,
                     tpaService,
                     bountyService,
-                    shopService
+                    shopService,
+                    claimService
             );
             cmd.setExecutor(timCommand);
             cmd.setTabCompleter(timCommand);
@@ -153,7 +149,6 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
             getLogger().severe("Komanda /tim nije registrovana (plugin.yml).");
         }
 
-        // command /timreload (OP only)
         PluginCommand reloadCmd = getCommand("timreload");
         if (reloadCmd != null) {
             reloadCmd.setExecutor(new TimReloadCommand(this, messages));
@@ -162,59 +157,38 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         }
     }
 
-    /** Full hot reload: config.yml + messages.yml + restart svih config-driven schedulera. */
     public void reloadAllConfigs() {
-        // 1) reload config.yml
         reloadConfig();
 
-        // 2) reload Settings (runtime update)
         Settings fresh = Settings.load(this);
         this.settings.copyFrom(fresh);
 
-        // 3) reload messages.yml
         this.messages.reload();
 
-        // NEW: reload players.yml cache (starter anti-abuse)
         try { this.playersStorage.load(); } catch (Exception ignored) { }
-
-        // NEW: reload shop.yml
         try { this.shopService.reloadShopConfig(); } catch (Exception ignored) { }
 
-        // 4) restart servise koji zavise od Settings tickova
         try { locatorService.start(); } catch (Exception ignored) {}
         try { persistenceService.restartTimers(); } catch (Exception ignored) {}
         try { scoreboardService.syncAll(); } catch (Exception ignored) {}
 
-        // 5) restart servise koji zavise od config.yml (interval/loot/rewards...)
         try { rewardService.reloadFromConfig(); } catch (Exception ignored) {}
         try { supplyDropService.reloadFromConfig(); } catch (Exception ignored) {}
 
-        // NEW: refresh bounty names (ako se desi reload)
         try { bountyService.applyAllOnline(); } catch (Exception ignored) {}
     }
 
     @Override
     public void onDisable() {
-        if (supplyDropService != null) {
-            supplyDropService.stop();
-        }
-        if (rewardService != null) {
-            rewardService.stop();
-        }
-        try {
-            locatorService.stop();
-        } catch (Exception ignored) { }
+        if (supplyDropService != null) supplyDropService.stop();
+        if (rewardService != null) rewardService.stop();
 
-        try {
-            persistenceService.saveNow();
-        } catch (Exception e) {
-            getLogger().severe("Greška pri snimanju teams.yml: " + e.getMessage());
-        }
+        try { locatorService.stop(); } catch (Exception ignored) { }
 
-        // NEW: save players.yml (safety)
-        try {
-            if (playersStorage != null) playersStorage.save();
-        } catch (Exception ignored) {}
+        try { if (persistenceService != null) persistenceService.saveNow(); }
+        catch (Exception e) { getLogger().severe("Greška pri snimanju: " + e.getMessage()); }
+
+        try { if (playersStorage != null) playersStorage.save(); } catch (Exception ignored) {}
 
         getLogger().info("TeamSurvival isključen.");
     }

@@ -45,6 +45,9 @@ public final class Settings {
 
     public boolean showCoordinatesInPing;
 
+    // NEW: chunk claims
+    public Claims claims;
+
     public Locator locator;
     public Scoreboard scoreboard;
     public Persistence persistence;
@@ -70,6 +73,7 @@ public final class Settings {
             boolean friendlyFireEnabled,
             boolean friendlyFireStrictExplosions,
             boolean showCoordinatesInPing,
+            Claims claims,
             Locator locator,
             Scoreboard scoreboard,
             Persistence persistence,
@@ -101,6 +105,8 @@ public final class Settings {
         this.friendlyFireStrictExplosions = friendlyFireStrictExplosions;
 
         this.showCoordinatesInPing = showCoordinatesInPing;
+
+        this.claims = claims;
 
         this.locator = locator;
         this.scoreboard = scoreboard;
@@ -157,6 +163,21 @@ public final class Settings {
 
         boolean showCoordinatesInPing = c.getBoolean("ping.showCoordinatesInPing", false);
 
+        // NEW: claims settings
+        Claims claims = new Claims(
+                c.getBoolean("claims.enabled", true),
+                Math.max(0L, c.getLong("claims.price-per-chunk", 200L)),
+                c.getBoolean("claims.only-leader-can-claim", true),
+                Math.max(0, c.getInt("claims.max-claims-per-team", 0)),
+                c.getBoolean("claims.foreign-open-enabled", true),
+                c.getBoolean("claims.protection.block-break", true),
+                c.getBoolean("claims.protection.block-place", true),
+                c.getBoolean("claims.protection.block-explosions", true),
+                c.getBoolean("claims.protection.pistons", true),
+                c.getBoolean("claims.protection.enderman-grief", true),
+                c.getBoolean("claims.protection.hanging-break", true)
+        );
+
         Locator locator = new Locator(
                 c.getBoolean("locator.enabled", true),
                 c.getInt("locator.intervalTicks", 20),
@@ -199,6 +220,7 @@ public final class Settings {
                 friendlyFireEnabled,
                 friendlyFireStrictExplosions,
                 showCoordinatesInPing,
+                claims,
                 locator,
                 scoreboard,
                 persistence,
@@ -308,6 +330,9 @@ public final class Settings {
 
         this.showCoordinatesInPing = s.showCoordinatesInPing;
 
+        // NEW: claims
+        this.claims = s.claims;
+
         this.locator = s.locator;
         this.scoreboard = s.scoreboard;
         this.persistence = s.persistence;
@@ -319,6 +344,20 @@ public final class Settings {
         if (worldName == null) return false;
         return allowedWorldsLower.contains(worldName.toLowerCase(Locale.ROOT));
     }
+
+    public record Claims(
+            boolean enabled,
+            long pricePerChunk,
+            boolean onlyLeaderCanClaim,
+            int maxClaimsPerTeam,
+            boolean foreignOpenEnabled,
+            boolean protectBlockBreak,
+            boolean protectBlockPlace,
+            boolean protectExplosions,
+            boolean protectPistons,
+            boolean preventEndermanGrief,
+            boolean protectHangingBreak
+    ) { }
 
     public record Locator(boolean enabled, int intervalTicks, int maxEntries) { }
 

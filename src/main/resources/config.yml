@@ -1,6 +1,6 @@
 # =========================================================
 # TeamSurvival - config.yml (SR)
-# Verzija: 1.0 (primer / template)
+# Verzija: 4.0
 #
 # ✅ Sve vrednosti u sekundama, osim gde piše drugačije.
 # ✅ Boje u porukama koriste Minecraft color codes sa &.
@@ -709,3 +709,25 @@ supplyDrops:
       - material: NETHERITE_INGOT
         minAmount: 2
         maxAmount: 6
+# ---------------------------------------------------------
+# CLAIMS (Chunk claiming)
+# ---------------------------------------------------------
+claims:
+  enabled: true
+
+  # Cena po claimovanom chunk-u
+  price-per-chunk: 200
+
+  # true = samo leader može claim/unclaim
+  only-leader-can-claim: true
+
+  # 0 = unlimited
+  max-claims-per-team: 0
+
+  # Da li drugi timovi smeju da otvaraju vrata/chestove (krađa)
+  foreign-open-enabled: true
+
+  protection:
+    block-break: true
+    block-place: true
+    block-explosions: true

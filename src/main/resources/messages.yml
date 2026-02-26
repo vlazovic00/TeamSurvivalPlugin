@@ -18,6 +18,22 @@ usage:
   tpa: "&7Upotreba: &b/tim tpa <teammate>"
   kick: "&7Upotreba: &b/tim izbaci <igrač>"
 
+claims:
+  disabled: "&cClaims sistem je isključen."
+  worldNotAllowed: "&cU ovom svetu nije dozvoljen claim."
+  onlyLeader: "&cSamo leader može da claim/unclaim."
+  alreadyYours: "&eOvaj chunk je već vaš."
+  alreadyClaimed: "&cOvaj chunk je već claimovan."
+  limitReached: "&cDostigli ste limit claimova: &e%max%&c."
+  notEnoughCoins: "&cNemaš dovoljno coins. Potrebno: &e%price%&c."
+  claimed: "&aClaim uspešan! &7(-%price% coins) &8[&b%world%&8:&e %x%&8,&e %z%&8]"
+  unclaimed: "&aUnclaim uspešan! &8[&b%world%&8:&e %x%&8,&e %z%&8]"
+  notClaimed: "&cOvaj chunk nije claimovan."
+  notYours: "&cOvaj chunk nije vaš."
+  noBreak: "&cNe možeš da rušiš u tuđem claimu."
+  noPlace: "&cNe možeš da gradiš u tuđem claimu."
+  noInteract: "&cNe možeš da koristiš to u tuđem claimu."
+
 help:
   header: "&bTeamSurvival &7- pomoć"
   lines:
