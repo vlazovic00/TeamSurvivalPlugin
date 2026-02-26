@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -184,9 +185,26 @@ public final class EarningsService {
         }
     }
 
+    /**
+     * Tracks blocks placed by players to prevent "place & break" farming.
+     *
+     * PROBLEM (before): the map was only cleaned when the same block was later checked on break.
+     * If players build a lot and do NOT break those blocks, the map grows forever → RAM + GC issues.
+     *
+     * FIX: add sweepOld() which removes entries older than TTL; plus a hard-cap safety for infinite TTL.
+     */
     public static final class PlacedBlockTracker {
         private final Settings settings;
-        private final Map<BlockKey, Long> placedAt = new HashMap<>();
+
+        // Pre-size a bit to reduce rehashing under normal load.
+        private final Map<BlockKey, Long> placedAt = new HashMap<>(8192);
+
+        // Safety cap (especially important if TTL <= 0 meaning "infinite").
+        // If you want, we can move this to config later.
+        private static final int HARD_CAP_ENTRIES = 250_000;
+
+        // When hard cap is exceeded, remove at least this many oldest-ish entries in one pass.
+        private static final int HARD_CAP_EVICT_MIN = 25_000;
 
         PlacedBlockTracker(Settings settings) {
             this.settings = settings;
@@ -195,6 +213,11 @@ public final class EarningsService {
         public void markPlaced(BlockKey k) {
             if (k == null) return;
             placedAt.put(k, System.currentTimeMillis());
+
+            // If TTL is infinite (<=0), the map would grow forever. Protect memory.
+            if (placedAt.size() > HARD_CAP_ENTRIES) {
+                enforceHardCap();
+            }
         }
 
         public boolean wasPlacedRecently(BlockKey k) {
@@ -203,6 +226,9 @@ public final class EarningsService {
             if (at == null) return false;
 
             long ttlMs = Math.max(0L, settings.earnings.antiFarm.placedBlockTtlSeconds) * 1000L;
+
+            // TTL <= 0 means "treat placed blocks as always placed" (old behavior),
+            // but we rely on hard-cap eviction to prevent infinite growth.
             if (ttlMs <= 0) return true;
 
             long now = System.currentTimeMillis();
@@ -215,6 +241,80 @@ public final class EarningsService {
 
         public double placedFactor() {
             return settings.earnings.antiFarm.placedBlockFactor;
+        }
+
+        /**
+         * Call this periodically (e.g., every 60s) to remove old entries.
+         * This is the main RAM/GC optimization.
+         */
+        public void sweepOld() {
+            long ttlMs = Math.max(0L, settings.earnings.antiFarm.placedBlockTtlSeconds) * 1000L;
+            if (ttlMs <= 0) return; // "infinite" TTL -> no time-based sweep
+
+            long now = System.currentTimeMillis();
+            Iterator<Map.Entry<BlockKey, Long>> it = placedAt.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<BlockKey, Long> e = it.next();
+                Long at = e.getValue();
+                if (at == null) {
+                    it.remove();
+                    continue;
+                }
+                if (now - at > ttlMs) {
+                    it.remove();
+                }
+            }
+        }
+
+        /**
+         * If TTL is infinite (or misconfigured huge), prevent memory runaway.
+         * We evict the oldest entries we can find in a single scan.
+         */
+        private void enforceHardCap() {
+            if (placedAt.isEmpty()) return;
+
+            // Evict at least HARD_CAP_EVICT_MIN, or enough to go under cap.
+            int needToRemove = Math.max(HARD_CAP_EVICT_MIN, placedAt.size() - HARD_CAP_ENTRIES);
+            long now = System.currentTimeMillis();
+
+            // One pass: remove the oldest entries first-ish by using an age threshold that we tighten.
+            // Simple & cheap approach: remove entries older than a moving cutoff until we remove enough.
+            // (Good enough for safety; not perfect LRU.)
+            long cutoff = now - 60_000L; // start with 1 minute old
+            int removed = 0;
+
+            // Try a few rounds with expanding cutoff window.
+            for (int round = 0; round < 6 && removed < needToRemove; round++) {
+                Iterator<Map.Entry<BlockKey, Long>> it = placedAt.entrySet().iterator();
+                while (it.hasNext() && removed < needToRemove) {
+                    Map.Entry<BlockKey, Long> e = it.next();
+                    Long at = e.getValue();
+                    if (at == null || at < cutoff) {
+                        it.remove();
+                        removed++;
+                    }
+                }
+                // expand: 1m -> 5m -> 30m -> 2h -> 12h -> 48h
+                cutoff -= switch (round) {
+                    case 0 -> 4 * 60_000L;
+                    case 1 -> 25 * 60_000L;
+                    case 2 -> 90 * 60_000L;
+                    case 3 -> 10 * 60 * 60_000L;
+                    case 4 -> 36 * 60 * 60_000L;
+                    default -> 0L;
+                };
+            }
+
+            // If still not enough removed (e.g. almost all entries are very new),
+            // remove arbitrary entries until we're safe.
+            if (removed < needToRemove) {
+                Iterator<BlockKey> it = placedAt.keySet().iterator();
+                while (it.hasNext() && removed < needToRemove) {
+                    it.next();
+                    it.remove();
+                    removed++;
+                }
+            }
         }
     }
 

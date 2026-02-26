@@ -12,6 +12,7 @@ import me.chinq.teamsurvival.util.StartupLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
 
@@ -47,6 +48,9 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
     private BountyService bountyService;
     private ShopService shopService;
 
+    // ✅ NEW: task za periodični sweep (da ga cancelujemo na disable)
+    private BukkitTask placedSweepTask;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -73,8 +77,23 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
 
         this.persistenceService = new PersistenceService(this, settings, teamsStorage, teamService, claimsStorage, claimService);
 
+        // ✅ IMPORTANT: EarningsService mora pre schedulera koji ga koristi
         this.earningsService = new EarningsService(settings, teamService);
         Bukkit.getPluginManager().registerEvents(new EarningsListener(earningsService), this);
+
+        // ✅ NEW: sweep starih "placed block" unosa (anti-farm) na svakih 60 sekundi
+        this.placedSweepTask = Bukkit.getScheduler().runTaskTimer(
+                this,
+                () -> {
+                    try {
+                        earningsService.placedBlocks().sweepOld();
+                    } catch (Throwable ignored) {
+                        // ne rušimo scheduler ni plugin zbog edge-case greške
+                    }
+                },
+                60 * 20L,
+                60 * 20L
+        );
 
         this.teamChatService = new TeamChatService();
         this.combatTagService = new CombatTagService(settings);
@@ -176,6 +195,9 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         try { supplyDropService.reloadFromConfig(); } catch (Exception ignored) {}
 
         try { bountyService.applyAllOnline(); } catch (Exception ignored) {}
+
+        // ✅ placedSweepTask ne mora restart jer koristi isti earningsService,
+        // a sweepOld() čita settings svaki put, a settings radi copyFrom(fresh).
     }
 
     @Override
@@ -184,6 +206,9 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         if (rewardService != null) rewardService.stop();
 
         try { locatorService.stop(); } catch (Exception ignored) { }
+
+        // ✅ NEW: cancel sweep task
+        try { if (placedSweepTask != null) placedSweepTask.cancel(); } catch (Exception ignored) { }
 
         try { if (persistenceService != null) persistenceService.saveNow(); }
         catch (Exception e) { getLogger().severe("Greška pri snimanju: " + e.getMessage()); }
