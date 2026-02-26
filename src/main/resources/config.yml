@@ -322,7 +322,7 @@ friendlyFire:
 # ---------------------------------------------------------
 # Ako tvoj plugin /ping prikazuje koordinate (opciono).
 ping:
-  showCoordinatesInPing: false
+  showCoordinatesInPing: true
 
 
 # ---------------------------------------------------------
@@ -659,9 +659,9 @@ supplyDrops:
     spawn:
       title: "&6&lSUPPLY DROP!"
       subtitle: "&ePao je supply u worldborder-u!"
-      fadeInTicks: 10
-      stayTicks: 60
-      fadeOutTicks: 10
+      fadeInTicks: 50
+      stayTicks: 100
+      fadeOutTicks: 50
 
   fireworks:
     # Koliko dugo traje spam vatrometa
