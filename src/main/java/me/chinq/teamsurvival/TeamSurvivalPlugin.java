@@ -18,136 +18,167 @@ import java.util.Map;
 
 public final class TeamSurvivalPlugin extends JavaPlugin {
 
+    // =========================================================
+    // CORE: settings + messages
+    // =========================================================
     private Settings settings;
     private MessageService messages;
 
+    // =========================================================
+    // STORAGE
+    // =========================================================
     private TeamsYamlStorage teamsStorage;
     private PlayersYamlStorage playersStorage;
-    private StarterCoinsService starterCoinsService;
-
     private ClaimsYamlStorage claimsStorage;
-    private ClaimService claimService;
 
-    private SupplyDropService supplyDropService;
-
+    // =========================================================
+    // SERVICES: teams, claims, persistence
+    // =========================================================
+    private StarterCoinsService starterCoinsService;
     private TeamService teamService;
+
+    private ClaimService claimService;
     private PersistenceService persistenceService;
 
+    // =========================================================
+    // SERVICES: gameplay / utilities
+    // =========================================================
     private TeamChatService teamChatService;
     private CombatTagService combatTagService;
     private TeleportService teleportService;
     private InviteService inviteService;
-    private EarningsService earningsService;
     private TpaService tpaService;
+
+    private EarningsService earningsService;
 
     private ScoreboardService scoreboardService;
     private LocatorService locatorService;
 
     private RewardService rewardService;
+    private SupplyDropService supplyDropService;
 
     private BountyService bountyService;
     private ShopService shopService;
 
-    // ✅ NEW: task za periodični sweep (da ga cancelujemo na disable)
+    // =========================================================
+    // NEW: anti spawn-camp
+    // =========================================================
+    private SpawnCampService spawnCampService;
+
+    // =========================================================
+    // TASKS
+    // =========================================================
     private BukkitTask placedSweepTask;
 
+    // =========================================================
+    // ENABLE
+    // =========================================================
     @Override
     public void onEnable() {
+        // ---------- Files ----------
         saveDefaultConfig();
 
-        this.supplyDropService = new SupplyDropService(this);
-        this.supplyDropService.start();
-        Bukkit.getPluginManager().registerEvents(new SupplyDropListener(supplyDropService), this);
-
+        // ---------- Settings / Messages ----------
         this.settings = Settings.load(this);
-        new StartupLogger(this, settings).printStartup();
         this.messages = new MessageService(this);
+        new StartupLogger(this, settings).printStartup();
 
+        // ---------- Storages ----------
         this.teamsStorage = new TeamsYamlStorage(this);
         Map<String, Team> loadedTeams = teamsStorage.loadTeams();
 
         this.playersStorage = new PlayersYamlStorage(this);
         this.playersStorage.load();
-        this.starterCoinsService = new StarterCoinsService(this, settings, playersStorage);
-
-        this.teamService = new TeamService(settings, starterCoinsService, loadedTeams);
 
         this.claimsStorage = new ClaimsYamlStorage(this);
-        this.claimService = new ClaimService(settings, messages, teamService, claimsStorage.loadClaims());
 
+        // ---------- Core services ----------
+        this.starterCoinsService = new StarterCoinsService(this, settings, playersStorage);
+        this.teamService = new TeamService(settings, starterCoinsService, loadedTeams);
+
+        this.claimService = new ClaimService(settings, messages, teamService, claimsStorage.loadClaims());
         this.persistenceService = new PersistenceService(this, settings, teamsStorage, teamService, claimsStorage, claimService);
 
-        // ✅ IMPORTANT: EarningsService mora pre schedulera koji ga koristi
+        // ---------- Economy (earnings) ----------
         this.earningsService = new EarningsService(settings, teamService);
-        Bukkit.getPluginManager().registerEvents(new EarningsListener(earningsService), this);
 
-        // ✅ NEW: sweep starih "placed block" unosa (anti-farm) na svakih 60 sekundi
-        this.placedSweepTask = Bukkit.getScheduler().runTaskTimer(
-                this,
-                () -> {
-                    try {
-                        earningsService.placedBlocks().sweepOld();
-                    } catch (Throwable ignored) {
-                        // ne rušimo scheduler ni plugin zbog edge-case greške
-                    }
-                },
-                60 * 20L,
-                60 * 20L
-        );
+        // Anti-farm sweep task (placed blocks cleanup)
+        startPlacedSweepTask();
 
+        // ---------- Gameplay services ----------
         this.teamChatService = new TeamChatService();
         this.combatTagService = new CombatTagService(settings);
+
         this.teleportService = new TeleportService(this, settings, messages);
         this.inviteService = new InviteService(settings, messages, teamService);
         this.tpaService = new TpaService(this, settings, messages, teamService, teleportService, combatTagService);
 
+        // ---------- UI services ----------
         this.scoreboardService = new ScoreboardService(settings, messages, teamService, persistenceService);
         this.locatorService = new LocatorService(this, settings, messages, teamService);
+
+        // ---------- Features ----------
+        this.rewardService = new RewardService(this, messages);
+
+        this.supplyDropService = new SupplyDropService(this);
+        this.supplyDropService.start();
 
         this.bountyService = new BountyService(this, teamService);
         this.shopService = new ShopService(this, teamService, messages);
 
+        // ---------- NEW: anti spawn camp ----------
+        this.spawnCampService = new SpawnCampService(settings);
+
+        // ---------- Bindings ----------
         teamService.bindOnTeamsChanged(() -> {
             persistenceService.requestSaveDebounced();
             scoreboardService.syncAll();
         });
         claimService.bindOnClaimsChanged(() -> persistenceService.requestSaveDebounced());
 
+        // ---------- Scoreboard bootstrap ----------
         if (settings.scoreboard.enabled() && settings.scoreboard.resetOnEnable()) {
             scoreboardService.resetAllTsTeams();
         }
         scoreboardService.syncAll();
 
+        // ---------- Start background loops ----------
         locatorService.start();
-
-        this.rewardService = new RewardService(this, messages);
-
-        Bukkit.getPluginManager().registerEvents(
-                new GameplayListener(settings, messages, teamService, teleportService, combatTagService),
-                this
-        );
-        Bukkit.getPluginManager().registerEvents(
-                new ChatListener(messages, teamService, teamChatService),
-                this
-        );
-        Bukkit.getPluginManager().registerEvents(
-                new JoinListener(this, settings, scoreboardService, bountyService),
-                this
-        );
-        Bukkit.getPluginManager().registerEvents(
-                new BountyAndShopListener(teamService, bountyService, shopService),
-                this
-        );
-
-        Bukkit.getPluginManager().registerEvents(
-                new ClaimProtectionListener(settings, messages, claimService),
-                this
-        );
-
         bountyService.applyAllOnline();
 
-        PluginCommand cmd = getCommand("tim");
-        if (cmd != null) {
+        // ---------- Events ----------
+        registerAllListeners();
+
+        // ---------- Commands ----------
+        registerCommands();
+
+        getLogger().info("TeamSurvival uključen ✅");
+    }
+
+    private void registerAllListeners() {
+        // Economy
+        regEvents(new EarningsListener(earningsService));
+        // Supply drops
+        regEvents(new SupplyDropListener(supplyDropService));
+
+        // General gameplay
+        regEvents(new GameplayListener(settings, messages, teamService, teleportService, combatTagService));
+        regEvents(new ChatListener(messages, teamService, teamChatService));
+        regEvents(new JoinListener(this, settings, scoreboardService, bountyService));
+        regEvents(new BountyAndShopListener(teamService, bountyService, shopService));
+
+        // Claims
+        regEvents(new ClaimProtectionListener(settings, messages, claimService));
+        regEvents(new ClaimEnterListener(settings, messages, teamService, claimService));
+
+        // NEW: anti spawn-camp respawn override
+        regEvents(new AntiSpawnCampRespawnListener(settings, messages, teamService, spawnCampService));
+    }
+
+    private void registerCommands() {
+        // /tim
+        PluginCommand tim = getCommand("tim");
+        if (tim != null) {
             TimCommand timCommand = new TimCommand(
                     settings,
                     messages,
@@ -162,59 +193,94 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
                     shopService,
                     claimService
             );
-            cmd.setExecutor(timCommand);
-            cmd.setTabCompleter(timCommand);
+            tim.setExecutor(timCommand);
+            tim.setTabCompleter(timCommand);
         } else {
             getLogger().severe("Komanda /tim nije registrovana (plugin.yml).");
         }
 
-        PluginCommand reloadCmd = getCommand("timreload");
-        if (reloadCmd != null) {
-            reloadCmd.setExecutor(new TimReloadCommand(this, messages));
+        // /timreload
+        PluginCommand reload = getCommand("timreload");
+        if (reload != null) {
+            reload.setExecutor(new TimReloadCommand(this, messages));
         } else {
             getLogger().severe("Komanda /timreload nije registrovana (plugin.yml).");
         }
     }
 
+    // =========================================================
+    // RELOAD
+    // =========================================================
     public void reloadAllConfigs() {
         reloadConfig();
 
+        // settings
         Settings fresh = Settings.load(this);
         this.settings.copyFrom(fresh);
 
+        // messages
         this.messages.reload();
 
-        try { this.playersStorage.load(); } catch (Exception ignored) { }
-        try { this.shopService.reloadShopConfig(); } catch (Exception ignored) { }
+        // soft reloads (best-effort)
+        try { this.playersStorage.load(); } catch (Exception ignored) {}
+        try { this.shopService.reloadShopConfig(); } catch (Exception ignored) {}
 
-        try { locatorService.start(); } catch (Exception ignored) {}
-        try { persistenceService.restartTimers(); } catch (Exception ignored) {}
-        try { scoreboardService.syncAll(); } catch (Exception ignored) {}
+        try { this.locatorService.start(); } catch (Exception ignored) {}
+        try { this.persistenceService.restartTimers(); } catch (Exception ignored) {}
+        try { this.scoreboardService.syncAll(); } catch (Exception ignored) {}
 
-        try { rewardService.reloadFromConfig(); } catch (Exception ignored) {}
-        try { supplyDropService.reloadFromConfig(); } catch (Exception ignored) {}
+        try { this.rewardService.reloadFromConfig(); } catch (Exception ignored) {}
+        try { this.supplyDropService.reloadFromConfig(); } catch (Exception ignored) {}
 
-        try { bountyService.applyAllOnline(); } catch (Exception ignored) {}
+        try { this.bountyService.applyAllOnline(); } catch (Exception ignored) {}
 
-        // ✅ placedSweepTask ne mora restart jer koristi isti earningsService,
-        // a sweepOld() čita settings svaki put, a settings radi copyFrom(fresh).
+        // placedSweepTask ne mora restartovati:
+        // koristi isti earningsService, a settings se osveži preko copyFrom(fresh)
+        getLogger().info("TeamSurvival reloadovan ✅");
     }
 
+    // =========================================================
+    // DISABLE
+    // =========================================================
     @Override
     public void onDisable() {
-        if (supplyDropService != null) supplyDropService.stop();
-        if (rewardService != null) rewardService.stop();
+        // Stop feature loops
+        try { if (supplyDropService != null) supplyDropService.stop(); } catch (Exception ignored) {}
+        try { if (rewardService != null) rewardService.stop(); } catch (Exception ignored) {}
+        try { if (locatorService != null) locatorService.stop(); } catch (Exception ignored) {}
 
-        try { locatorService.stop(); } catch (Exception ignored) { }
+        // Tasks
+        try { if (placedSweepTask != null) placedSweepTask.cancel(); } catch (Exception ignored) {}
 
-        // ✅ NEW: cancel sweep task
-        try { if (placedSweepTask != null) placedSweepTask.cancel(); } catch (Exception ignored) { }
-
+        // Persist
         try { if (persistenceService != null) persistenceService.saveNow(); }
         catch (Exception e) { getLogger().severe("Greška pri snimanju: " + e.getMessage()); }
 
         try { if (playersStorage != null) playersStorage.save(); } catch (Exception ignored) {}
 
         getLogger().info("TeamSurvival isključen.");
+    }
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+    private void regEvents(Object listener) {
+        Bukkit.getPluginManager().registerEvents((org.bukkit.event.Listener) listener, this);
+    }
+
+    private void startPlacedSweepTask() {
+        // sweep starih "placed block" unosa (anti-farm) na svakih 60 sekundi
+        this.placedSweepTask = Bukkit.getScheduler().runTaskTimer(
+                this,
+                () -> {
+                    try {
+                        earningsService.placedBlocks().sweepOld();
+                    } catch (Throwable ignored) {
+                        // ne rušimo scheduler ni plugin zbog edge-case greške
+                    }
+                },
+                60 * 20L,
+                60 * 20L
+        );
     }
 }

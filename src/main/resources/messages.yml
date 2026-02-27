@@ -33,6 +33,9 @@ claims:
   noBreak: "&cNe možeš da rušiš u tuđem claimu."
   noPlace: "&cNe možeš da gradiš u tuđem claimu."
   noInteract: "&cNe možeš da koristiš to u tuđem claimu."
+  enterYours: "&aUšao si u svoju zonu."
+  enterOther: "&cUšao si u zonu tima &e%team%&c."
+  enterWilderness: "&7Ušao si u divljinu."
 
 help:
   header: "&bTeamSurvival &7- pomoć"
@@ -155,3 +158,6 @@ actionbar:
     format: "&8[&bTIM&8] &r%entries%"
     entrySameWorld: "&f%arrow% &b%name% &8· &f%distance%&7m"
     entryOtherWorld: "&c⛔ &b%name% &8· &d%world%"
+
+respawn:
+  relocated: "&cPreviše puta si ubijen od &e%killer%&c. Respawnovan si na random lokaciju."
