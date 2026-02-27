@@ -5,8 +5,6 @@ import me.chinq.teamsurvival.service.ClaimService;
 import me.chinq.teamsurvival.service.MessageService;
 import me.chinq.teamsurvival.service.Settings;
 import me.chinq.teamsurvival.service.TeamService;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -84,14 +82,14 @@ public final class ClaimEnterListener implements Listener {
         if (newOwnerTeamId == null) {
             // ušao u wilderness
             String raw = msg.get("claims.enterWilderness");
-            if (raw != null && !raw.isEmpty()) sendActionBar(p, msg.colorize(raw));
+            if (raw != null && !raw.isEmpty()) sendChat(p, msg.colorize(raw));
             return;
         }
 
         // ušao u claim nekog tima
         if (myTeam != null && newOwnerTeamId.equals(myTeam.getId())) {
             String raw = msg.get("claims.enterYours");
-            if (raw != null && !raw.isEmpty()) sendActionBar(p, msg.colorize(raw));
+            if (raw != null && !raw.isEmpty()) sendChat(p, msg.colorize(raw));
             return;
         }
 
@@ -101,7 +99,7 @@ public final class ClaimEnterListener implements Listener {
         String tpl = msg.get("claims.enterOther");
         if (tpl != null && !tpl.isEmpty()) {
             String built = msg.applyPlaceholders(tpl, Map.of("team", ownerName));
-            sendActionBar(p, msg.colorize(built));
+            sendChat(p, msg.colorize(built));
         }
     }
 
@@ -111,7 +109,8 @@ public final class ClaimEnterListener implements Listener {
         return a.equals(b);
     }
 
-    private void sendActionBar(Player p, String coloredText) {
-        p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(coloredText));
+    // CHAT umesto ActionBar
+    private void sendChat(Player p, String coloredText) {
+        p.sendMessage(coloredText);
     }
 }
