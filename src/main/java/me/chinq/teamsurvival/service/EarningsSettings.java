@@ -51,11 +51,18 @@ public final class EarningsSettings {
         es.antiFarm.placedBlockFactor = c.getDouble("economy.earnings.anti-farm.placed-block-factor", 0.0);
 
         // CATEGORIES
-        loadCategory(c, "economy.earnings.mining", es.mining);
-        loadCategory(c, "economy.earnings.building", es.building);
-        loadCategory(c, "economy.earnings.farming", es.farming);
-        loadCategory(c, "economy.earnings.crafting", es.crafting);
-        loadCategory(c, "economy.earnings.smelting", es.smelting);
+        loadMaterialCategory(c, "economy.earnings.mining", "materials", es.mining);
+        loadMaterialCategory(c, "economy.earnings.building", "materials", es.building);
+
+        // farming ima svoj key: "mature-crop" + "crops"
+        loadFarmingCategory(c, "economy.earnings.farming", es.farming);
+
+        // hunting ima svoj key: "entities" (OVO JE PRE FALILO)
+        loadHuntingCategory(c, "economy.earnings.hunting", es.hunting);
+
+        // crafting/smelting koriste "items" (ali podržavamo i stari "materials")
+        loadMaterialCategory(c, "economy.earnings.crafting", "items", es.crafting);
+        loadMaterialCategory(c, "economy.earnings.smelting", "items", es.smelting);
 
         // FISHING
         es.fishing.enabled = c.getBoolean("economy.earnings.fishing.enabled", true);
@@ -69,18 +76,91 @@ public final class EarningsSettings {
         return es;
     }
 
-    private static void loadCategory(FileConfiguration c, String path, Category cat) {
+    /**
+     * Učitava kategoriju gde su nagrade mapirane po Material (mining/building/crafting/smelting...).
+     * sectionKey je obično "materials" ili "items".
+     *
+     * Kompatibilnost:
+     *  - ako sectionKey ne postoji, proba i "materials" (jer je stariji format)
+     */
+    private static void loadMaterialCategory(FileConfiguration c, String path, String sectionKey, Category cat) {
         cat.enabled = c.getBoolean(path + ".enabled", true);
         cat.def = c.getDouble(path + ".default", 0.05);
 
-        ConfigurationSection sec = c.getConfigurationSection(path + ".materials");
+        ConfigurationSection sec = c.getConfigurationSection(path + "." + sectionKey);
+        if (sec == null && !"materials".equalsIgnoreCase(sectionKey)) {
+            sec = c.getConfigurationSection(path + ".materials");
+        }
         if (sec == null) return;
 
+        loadMaterialsFromSection(sec, cat);
+    }
+
+    /**
+     * Farming koristi:
+     *  - enabled
+     *  - mature-crop (default za sve zrele cropove)
+     *  - crops: { WHEAT: 0.5, ... }
+     *
+     * Takođe podržava stari key "materials" (ako neko koristi stariji config).
+     */
+    private static void loadFarmingCategory(FileConfiguration c, String path, Category cat) {
+        cat.enabled = c.getBoolean(path + ".enabled", true);
+
+        // u tvom configu default je mature-crop, ali ostavljamo fallback na ".default" za kompatibilnost
+        double mature = c.getDouble(path + ".mature-crop", c.getDouble(path + ".default", 0.05));
+        cat.def = mature;
+
+        // prvo učitaj "crops"
+        ConfigurationSection crops = c.getConfigurationSection(path + ".crops");
+        if (crops != null) {
+            loadMaterialsFromSection(crops, cat);
+        }
+
+        // fallback: "materials" (stari format)
+        ConfigurationSection mats = c.getConfigurationSection(path + ".materials");
+        if (mats != null) {
+            loadMaterialsFromSection(mats, cat);
+        }
+    }
+
+    /**
+     * Hunting koristi:
+     *  - enabled
+     *  - default
+     *  - entities: { ZOMBIE: 0.3, ... }
+     */
+    private static void loadHuntingCategory(FileConfiguration c, String path, Category cat) {
+        cat.enabled = c.getBoolean(path + ".enabled", true);
+        cat.def = c.getDouble(path + ".default", 0.2);
+
+        ConfigurationSection sec = c.getConfigurationSection(path + ".entities");
+        if (sec != null) {
+            loadEntitiesFromSection(sec, cat);
+        }
+
+        // (opciono) fallback ako neko koristi "mobs" umesto "entities"
+        ConfigurationSection maybeOld = c.getConfigurationSection(path + ".mobs");
+        if (maybeOld != null) {
+            loadEntitiesFromSection(maybeOld, cat);
+        }
+    }
+
+    private static void loadMaterialsFromSection(ConfigurationSection sec, Category cat) {
         for (String key : sec.getKeys(false)) {
             try {
                 Material m = Material.valueOf(key.toUpperCase());
                 cat.materials.put(m, sec.getDouble(key));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) { }
+        }
+    }
+
+    private static void loadEntitiesFromSection(ConfigurationSection sec, Category cat) {
+        for (String key : sec.getKeys(false)) {
+            try {
+                EntityType type = EntityType.valueOf(key.toUpperCase());
+                cat.entities.put(type, sec.getDouble(key));
+            } catch (Exception ignored) { }
         }
     }
 
