@@ -19,6 +19,9 @@ public final class TeamService {
 
     private Runnable onTeamsChanged = () -> {};
 
+    // Called AFTER a team is removed from TeamService (useful for cleanup in other services)
+    private java.util.function.Consumer<String> onTeamDisbanded = (id) -> {};
+
     // NEW ctor signature
     public TeamService(Settings settings, StarterCoinsService starterCoinsService, Map<String, Team> initialTeams) {
         this.settings = settings;
@@ -29,6 +32,10 @@ public final class TeamService {
 
     public void bindOnTeamsChanged(Runnable onTeamsChanged) {
         this.onTeamsChanged = (onTeamsChanged == null) ? () -> {} : onTeamsChanged;
+    }
+
+    public void bindOnTeamDisbanded(java.util.function.Consumer<String> onTeamDisbanded) {
+        this.onTeamDisbanded = (onTeamDisbanded == null) ? (id) -> {} : onTeamDisbanded;
     }
 
     private void rebuildIndexes() {
@@ -196,6 +203,12 @@ public final class TeamService {
                 teamIdByMember.remove(u);
             }
         }
+
+        // notify other services (claims cleanup etc.)
+        try {
+            onTeamDisbanded.accept(teamId);
+        } catch (Exception ignored) {}
+
         onTeamsChanged.run();
     }
 

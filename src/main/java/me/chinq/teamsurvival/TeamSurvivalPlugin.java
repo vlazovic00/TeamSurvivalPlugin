@@ -136,6 +136,15 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
             persistenceService.requestSaveDebounced();
             scoreboardService.syncAll();
         });
+
+        // When a team disappears (last member left / disband), remove its claims immediately
+        teamService.bindOnTeamDisbanded((teamId) -> {
+            int removed = claimService.removeAllClaimsOfTeam(teamId);
+            if (removed > 0) {
+                getLogger().info("Removed " + removed + " claims of disbanded team " + teamId);
+            }
+        });
+
         claimService.bindOnClaimsChanged(() -> persistenceService.requestSaveDebounced());
 
         // ---------- Scoreboard bootstrap ----------
@@ -168,7 +177,8 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         regEvents(new ChatListener(messages, teamService, teamChatService));
         regEvents(new JoinListener(this, settings, scoreboardService, bountyService));
         regEvents(new BountyAndShopListener(teamService, bountyService, shopService));
-// ---------- PlaceholderAPI (for TAB scoreboard etc.) ----------
+
+        // ---------- PlaceholderAPI (for TAB scoreboard etc.) ----------
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             this.placeholders = new TeamSurvivalPlaceholders(
                     getDescription().getVersion(),
@@ -182,6 +192,7 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         } else {
             getLogger().info("PlaceholderAPI nije pronađen (opciono). Preskačem %teamsurvival_*%.");
         }
+
         // Claims
         regEvents(new ClaimProtectionListener(settings, messages, claimService));
         regEvents(new ClaimEnterListener(settings, messages, teamService, claimService));

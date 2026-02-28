@@ -199,6 +199,31 @@ public final class ClaimService {
         return true;
     }
 
+    /**
+     * Removes ALL claimed chunks for a given teamId (used when a team is disbanded).
+     * @return number of removed claims
+     */
+    public int removeAllClaimsOfTeam(String teamId) {
+        if (teamId == null || teamId.isEmpty()) return 0;
+
+        Set<ClaimedChunk> chunks = chunksByTeam.remove(teamId);
+        if (chunks == null || chunks.isEmpty()) return 0;
+
+        int removed = 0;
+        for (ClaimedChunk cc : chunks) {
+            String owner = ownerByChunk.get(cc);
+            if (teamId.equals(owner)) {
+                ownerByChunk.remove(cc);
+                removed++;
+            }
+        }
+
+        if (removed > 0) {
+            onClaimsChanged.run();
+        }
+        return removed;
+    }
+
     public Map<ClaimedChunk, String> snapshotAll() {
         return Map.copyOf(ownerByChunk);
     }
