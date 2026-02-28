@@ -1,8 +1,10 @@
 name: TeamSurvival
 main: me.chinq.teamsurvival.TeamSurvivalPlugin
-version: 4.2
-api-version: "1.20"
+version: 1.1
+api-version: "1.21"
 author: Chinq
+
+softdepend: [PlaceholderAPI]
 
 commands:
   tim:
@@ -19,6 +21,7 @@ permissions:
   teamsurvival.reload:
     description: Dozvola za /timreload
     default: op
+
   teamsurvival.coinset:
     description: Dozvola za /tim coinset <team> <amount>
     default: op

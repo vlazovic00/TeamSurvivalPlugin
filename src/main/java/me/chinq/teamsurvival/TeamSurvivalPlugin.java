@@ -9,6 +9,7 @@ import me.chinq.teamsurvival.storage.ClaimsYamlStorage;
 import me.chinq.teamsurvival.storage.PlayersYamlStorage;
 import me.chinq.teamsurvival.storage.TeamsYamlStorage;
 import me.chinq.teamsurvival.util.StartupLogger;
+import me.chinq.teamsurvival.integration.TeamSurvivalPlaceholders;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,6 +24,7 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
     // =========================================================
     private Settings settings;
     private MessageService messages;
+    private TeamSurvivalPlaceholders placeholders;
 
     // =========================================================
     // STORAGE
@@ -166,7 +168,20 @@ public final class TeamSurvivalPlugin extends JavaPlugin {
         regEvents(new ChatListener(messages, teamService, teamChatService));
         regEvents(new JoinListener(this, settings, scoreboardService, bountyService));
         regEvents(new BountyAndShopListener(teamService, bountyService, shopService));
-
+// ---------- PlaceholderAPI (for TAB scoreboard etc.) ----------
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            this.placeholders = new TeamSurvivalPlaceholders(
+                    getDescription().getVersion(),
+                    settings,
+                    teamService,
+                    claimService,
+                    bountyService
+            );
+            this.placeholders.register();
+            getLogger().info("PlaceholderAPI registrovan: %teamsurvival_*%");
+        } else {
+            getLogger().info("PlaceholderAPI nije pronađen (opciono). Preskačem %teamsurvival_*%.");
+        }
         // Claims
         regEvents(new ClaimProtectionListener(settings, messages, claimService));
         regEvents(new ClaimEnterListener(settings, messages, teamService, claimService));
